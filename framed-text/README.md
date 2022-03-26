@@ -7,7 +7,7 @@ add frame to text.
 ## python  
 
 ```
-useage: ./framed-text.py <file>
+useage: ./framed_text.py <file>
 ```
 
 code is really simple, just include some f-string and loop.  
