@@ -2,9 +2,9 @@
 
 add frame to text.  
 
-![framed](../images/framed-text.png)
-
 ## python  
+
+![framed](../images/framed-text.png)
 
 ```
 useage: ./framed_text.py <file>
@@ -12,3 +12,6 @@ useage: ./framed_text.py <file>
 
 code is really simple, just include some f-string and loop.  
 
+## rust  
+
+like python...
