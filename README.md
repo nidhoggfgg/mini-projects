@@ -15,3 +15,11 @@ like the [tables in rich](https://github.com/Textualize/rich), but more simple a
 
 ![print-tables](./images/print-tables.png)
 
+## tree-printer (Python)  
+
+print the tree structure in visual way!  
+only few line, recursive, simple, and easy to understand!  
+
+![tree-printer](./images/tree-printer.png)
+
+
