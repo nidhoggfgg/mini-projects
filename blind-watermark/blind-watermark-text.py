@@ -24,7 +24,7 @@ class Coder(object):
     _decoded: list[str] = []
 
     def __init__(
-        self, text: str, chiper: tuple[str, str, str] = ("​", "‌", "‍")
+        self, text: str, chiper: tuple[str, str, str] = ("\u200b", "\u200c", "\u200d")
     ) -> None:
         self.text = text
         self.chiper = chiper
@@ -125,7 +125,7 @@ class Coder(object):
         return _cut
 
 
-def main():
+def main() -> None:
     coder = Coder("hide some text in this sentence but invisible!")
     encoded = coder.encode("Hello world!")
     print(f"encode result: {encoded}\n")
