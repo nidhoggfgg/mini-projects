@@ -50,6 +50,7 @@ def _split(num):
 
 def main():
     a = 10234506007890.02
+    print(f"convert {a} to")
     print(convert(a))
 
 
