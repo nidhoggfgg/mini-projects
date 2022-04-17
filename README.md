@@ -1,7 +1,5 @@
 # for-beginners
 
--------
-
 some practical, mini and easy projects to help beginner used to writing code!
 
 ## framed-text (Python, Rust)
@@ -30,4 +28,8 @@ hide the information in a invisible way!
 
 ![hide-text](./images/blind-watermark-text.png)
 
+## convert money (Python)
 
+convert the number to Chinese money!
+
+![convert money](./images/convert_money.png)
