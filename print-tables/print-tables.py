@@ -53,7 +53,7 @@ class Table(object):
     _max_widths: list[int] = []
 
     # already generated segmentation line
-    _maked_seg: str = ""
+    _made_seg: str = ""
 
     # the result of already generated table
     _result: list[str] = []
@@ -167,16 +167,16 @@ class Table(object):
     def _add_seg(self, is_header: bool = False) -> None:
         """add segmentation line to table"""
         if is_header and self.seg is Seg.ONLY_HEADER:
-            self._result.append(self._maked_seg)
+            self._result.append(self._made_seg)
             return
 
         if self.seg is Seg.FULL:
-            self._result.append(self._maked_seg)
+            self._result.append(self._made_seg)
 
     def _make_seg(self) -> None:
         """make segmentation line"""
         items = [f"{self.seg_char[0]*width}" for width in self._max_widths]
-        self._maked_seg = f"{self.seg_char[1]}".join(items)
+        self._made_seg = f"{self.seg_char[1]}".join(items)
 
     def set_rows(self, rows: list[list[str]]) -> None:
         """set rows to table"""

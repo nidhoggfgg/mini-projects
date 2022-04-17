@@ -13,7 +13,7 @@ class Coder(object):
             There are few character can't see in common (ZWC):
                 1. U+200B (zero width space)
                 2. U+200C (zero width non-joiner)
-                3. U+200D (zeror width joiner)
+                3. U+200D (zero width joiner)
                 ...
     """
 
@@ -111,7 +111,7 @@ class Coder(object):
     def cut_up(cls, text: str) -> Callable[[int], Generator[str, None, None]]:
         """
         a function help cut up str to list,
-        every memeber in list has a fixed length
+        every members in list has a fixed length
         """
         # wrap _cut in a function looks odd,
         # but it is a simple example for learn closure :)

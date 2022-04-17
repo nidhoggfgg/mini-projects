@@ -5,7 +5,7 @@ class Tree(object):
     """a example tree printer
 
     Args:
-        tree (Optional[list[Any]], optinal): the list include the tree.
+        tree (Optional[list[Any]], optional): the list include the tree.
     """
 
     # the result of already generated str, not include \n.
@@ -55,7 +55,7 @@ class Tree(object):
         for line in self._result:
             print(line)
 
-    # TODO(nidhoggfgg): impl a push mathod (even a litte odd)
+    # TODO(nidhoggfgg): impl a push mathod (even a littie odd)
 
 
 def main() -> None:
