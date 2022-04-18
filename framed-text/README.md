@@ -1,8 +1,8 @@
-# framed-text  
+# framed-text
 
-add frame to text.  
+add frame to text.
 
-## python  
+## python
 
 ![framed](../images/framed-text.png)
 
@@ -10,8 +10,9 @@ add frame to text.
 useage: ./framed_text.py <file>
 ```
 
-code is really simple, just include some f-string and loop.  
+code is really simple, just include some f-string and loop.
 
-## rust  
+## rust
 
-like python...
+same as python...
+
