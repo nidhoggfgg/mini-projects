@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::{self, BufRead},
     path::Path,
+    process,
 };
 
 fn main() {
@@ -9,6 +10,7 @@ fn main() {
 
     if args.len() != 2 {
         println!("Usage: {} <file>", args[0]);
+        process::exit(2);
     }
 
     if let Ok(lines) = read_lines(&args[1]) {
