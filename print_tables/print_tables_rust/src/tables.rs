@@ -125,7 +125,7 @@ impl Table {
         self.add_body(&mut result);
         self.add_footer(&mut result);
 
-        return result;
+        result
     }
 
     fn add_header(&self, lines: &mut Vec<String>) {
@@ -135,7 +135,7 @@ impl Table {
                 .iter()
                 .map(|a| self.dec_char.th.repeat(*a))
                 .collect::<Vec<String>>()
-                .join(&self.dec_char.tm);
+                .join(self.dec_char.tm);
             lines.push(format!("{}{}{}", self.dec_char.lt, top, self.dec_char.rt))
         }
 
@@ -149,11 +149,8 @@ impl Table {
             self.add_seg(lines, false);
         }
 
-        match self.seg {
-            Segment::Full => {
-                lines.pop();
-            }
-            _ => (),
+        if let Segment::Full = self.seg {
+            lines.pop();
         }
     }
 
@@ -167,14 +164,14 @@ impl Table {
             .iter()
             .map(|a| self.dec_char.bh.repeat(*a))
             .collect::<Vec<String>>()
-            .join(&self.dec_char.bm);
+            .join(self.dec_char.bm);
         lines.push(format!(
             "{}{}{}",
             self.dec_char.lb, footer, self.dec_char.rb
         ))
     }
 
-    fn make_line(&self, row: &Vec<String>) -> String {
+    fn make_line(&self, row: &[String]) -> String {
         let tmp = self.max_widths.iter().zip(row);
         let line: Vec<String> = match self.align {
             Align::Left => tmp.map(|(a, b)| format!("{x:<y$}", x = b, y = a)).collect(),
@@ -188,7 +185,7 @@ impl Table {
             ("", "")
         };
 
-        let line = line.join(&self.dec_char.sep);
+        let line = line.join(self.dec_char.sep);
         format!("{}{}{}", prefix, line, suffix)
     }
 
@@ -198,7 +195,7 @@ impl Table {
             .iter()
             .map(|a| self.dec_char.sh.repeat(*a))
             .collect();
-        self.made_seg = segs.join(&self.dec_char.shv);
+        self.made_seg = segs.join(self.dec_char.shv);
     }
 
     fn add_seg(&self, lines: &mut Vec<String>, is_header: bool) {
@@ -217,13 +214,12 @@ impl Table {
             }
         }
 
-        match self.seg {
-            Segment::Full => lines.push(self.made_seg.clone()),
-            _ => return,
+        if let Segment::Full = self.seg {
+            lines.push(self.made_seg.clone());
         }
     }
 
-    fn re_count_width(&mut self, row: &Vec<String>) {
+    fn re_count_width(&mut self, row: &[String]) {
         if self.max_widths.is_empty() {
             for v in row {
                 self.max_widths.push(v.len() + 3);
@@ -252,3 +248,21 @@ impl Display for PushErr {
 }
 
 impl error::Error for PushErr {}
+
+impl Default for DecChar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for Align {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for Segment {
+    fn default() -> Self {
+        Self::new()
+    }
+}
