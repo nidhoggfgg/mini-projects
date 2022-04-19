@@ -28,32 +28,26 @@ impl Segment {
 
 #[rustfmt::skip]
 pub struct DecChar {
-    lt: char, rt: char, lb: char, rb: char,
-    tm: char, bm: char, lm: char, rm: char,
-    th: char, bh: char,
-    lv: char, rv: char,
-    sh: char, shv: char,
-    sep: char
+    lt: &'static str, rt: &'static str, lb: &'static str, rb: &'static str,
+    tm: &'static str, bm: &'static str, lm: &'static str, rm: &'static str,
+    th: &'static str, bh: &'static str,
+    lv: &'static str, rv: &'static str,
+    sh: &'static str, shv: &'static str,
+    sep: &'static str
 }
 
+#[rustfmt::skip]
 impl DecChar {
     pub fn new() -> Self {
         DecChar {
-            lt: '╭',
-            rt: '╖',
-            lb: '╰',
-            rb: '╝',
-            tm: '─',
-            bm: '═',
-            lm: '├',
-            rm: '╢',
-            th: '─',
-            bh: '═',
-            lv: '│',
-            rv: '║',
-            sh: '┄',
-            shv: '┄',
-            sep: ' ',
+            lt: "╭", rt: "╖",
+            lb: "╰", rb: "╝",
+            tm: "─", bm: "═",
+            lm: "├", rm: "╢",
+            th: "─", bh: "═",
+            lv: "│", rv: "║",
+            sh: "┄", shv:"┄",
+            sep: " ",
         }
     }
 }
@@ -139,20 +133,20 @@ impl Table {
             let top = self
                 .max_widths
                 .iter()
-                .map(|a| self.dec_char.th.to_string().repeat(*a))
+                .map(|a| self.dec_char.th.repeat(*a))
                 .collect::<Vec<String>>()
-                .join(&self.dec_char.tm.to_string());
-            lines.push(format!("{}{}{}", self.dec_char.lt.to_string(), top, self.dec_char.rt.to_string()));
+                .join(&self.dec_char.tm);
+            lines.push(format!("{}{}{}", self.dec_char.lt, top, self.dec_char.rt))
         }
-        lines.push(format!("{}{}{}", self.dec_char.lv.to_string(), self.make_line(&self.header), self.dec_char.rv.to_string()));
+        lines.push(format!("{}{}{}", self.dec_char.lv, self.make_line(&self.header), self.dec_char.rv));
         self.add_seg(lines, true);
     }
 
     fn add_body(&mut self, lines: &mut Vec<String>) {
         let (prefix, suffix) = if self.is_dec {
-            (self.dec_char.lv.to_string(), self.dec_char.rv.to_string())
+            (self.dec_char.lv, self.dec_char.rv)
         } else {
-            ("".to_string(), "".to_string())
+            ("", "")
         };
 
         for row in &self.rows {
@@ -176,10 +170,10 @@ impl Table {
         let footer = self
             .max_widths
             .iter()
-            .map(|a| self.dec_char.bh.to_string().repeat(*a))
+            .map(|a| self.dec_char.bh.repeat(*a))
             .collect::<Vec<String>>()
-            .join(&self.dec_char.bm.to_string());
-        lines.push(format!("{}{}{}", self.dec_char.lb.to_string(), footer, self.dec_char.rb.to_string()))
+            .join(&self.dec_char.bm);
+        lines.push(format!("{}{}{}", self.dec_char.lb, footer, self.dec_char.rb))
     }
 
     fn make_line(&self, row: &Vec<String>) -> String {
@@ -190,23 +184,23 @@ impl Table {
             Align::Right => tmp.map(|(a, b)| format!("{x:>y$}", x = b, y = a)).collect(),
         };
 
-        line.join(&self.dec_char.sep.to_string())
+        line.join(&self.dec_char.sep)
     }
 
     fn make_seg(&mut self) {
         let segs: Vec<String> = self
             .max_widths
             .iter()
-            .map(|a| self.dec_char.sh.to_string().repeat(*a))
+            .map(|a| self.dec_char.sh.repeat(*a))
             .collect();
-        self.made_seg = segs.join(&self.dec_char.shv.to_string());
+        self.made_seg = segs.join(&self.dec_char.shv);
     }
 
     fn add_seg(&self, lines: &mut Vec<String>, is_header: bool) {
         let (prefix, suffix) = if self.is_dec {
-            (self.dec_char.lm.to_string(), self.dec_char.rm.to_string())
+            (self.dec_char.lm, self.dec_char.rm)
         } else {
-            ("".to_string(), "".to_string())
+            ("", "")
         };
         if is_header {
             match self.seg {
