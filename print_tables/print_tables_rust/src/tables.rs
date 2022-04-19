@@ -139,29 +139,13 @@ impl Table {
             lines.push(format!("{}{}{}", self.dec_char.lt, top, self.dec_char.rt))
         }
 
-        let header = if self.is_dec {
-            format!(
-            "{}{}{}",
-            self.dec_char.lv,
-            self.make_line(&self.header),
-            self.dec_char.rv)
-        } else {
-            self.make_line(&self.header)
-        };
-
-        lines.push(header);
+        lines.push(self.make_line(&self.header));
         self.add_seg(lines, true);
     }
 
     fn add_body(&mut self, lines: &mut Vec<String>) {
-        let (prefix, suffix) = if self.is_dec {
-            (self.dec_char.lv, self.dec_char.rv)
-        } else {
-            ("", "")
-        };
-
         for row in &self.rows {
-            lines.push(format!("{}{}{}", prefix, self.make_line(row), suffix));
+            lines.push(self.make_line(row));
             self.add_seg(lines, false);
         }
 
@@ -198,7 +182,14 @@ impl Table {
             Align::Right => tmp.map(|(a, b)| format!("{x:>y$}", x = b, y = a)).collect(),
         };
 
-        line.join(&self.dec_char.sep)
+        let (prefix, suffix) = if self.is_dec {
+            (self.dec_char.lv, self.dec_char.rv)
+        } else {
+            ("", "")
+        };
+
+        let line = line.join(&self.dec_char.sep);
+        format!("{}{}{}", prefix, line, suffix)
     }
 
     fn make_seg(&mut self) {
@@ -216,6 +207,7 @@ impl Table {
         } else {
             ("", "")
         };
+
         if is_header {
             match self.seg {
                 Segment::OnlyHeader => {
