@@ -83,7 +83,6 @@ impl Table {
         self.header = header;
     }
 
-    #[inline]
     pub fn set_rows(&mut self, rows: Vec<Vec<String>>) -> Result<(), PushErr> {
         for row in rows {
             self.push(row)?;
@@ -121,6 +120,7 @@ impl Table {
     pub fn make_table(&mut self) -> Vec<String> {
         self.make_seg();
         let mut result: Vec<String> = Vec::new();
+
         self.add_header(&mut result);
         self.add_body(&mut result);
         self.add_footer(&mut result);
@@ -138,7 +138,18 @@ impl Table {
                 .join(&self.dec_char.tm);
             lines.push(format!("{}{}{}", self.dec_char.lt, top, self.dec_char.rt))
         }
-        lines.push(format!("{}{}{}", self.dec_char.lv, self.make_line(&self.header), self.dec_char.rv));
+
+        let header = if self.is_dec {
+            format!(
+            "{}{}{}",
+            self.dec_char.lv,
+            self.make_line(&self.header),
+            self.dec_char.rv)
+        } else {
+            self.make_line(&self.header)
+        };
+
+        lines.push(header);
         self.add_seg(lines, true);
     }
 
@@ -173,7 +184,10 @@ impl Table {
             .map(|a| self.dec_char.bh.repeat(*a))
             .collect::<Vec<String>>()
             .join(&self.dec_char.bm);
-        lines.push(format!("{}{}{}", self.dec_char.lb, footer, self.dec_char.rb))
+        lines.push(format!(
+            "{}{}{}",
+            self.dec_char.lb, footer, self.dec_char.rb
+        ))
     }
 
     fn make_line(&self, row: &Vec<String>) -> String {
