@@ -33,3 +33,11 @@ hide the information in a invisible way!
 convert the number to Chinese money!
 
 ![convert money](./images/convert_money.png)
+
+## termgraph (Python)
+
+a hack version of [termgraph]((https://github.com/sgeisler/termgraph.git)
+but simplified!
+
+![termgraph](./images/termgraph.png)
+
