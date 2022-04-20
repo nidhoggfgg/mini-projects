@@ -77,12 +77,13 @@ def draw(datas: Sequence[tuple[float, ...]], height: int) -> None:
     """draw the graph of the datas with the height of `height`"""
     max_value = max([data[1] for data in datas])
     min_value = min([data[2] for data in datas])
-    result = ""
+    result = []
     for y in reversed(range(0, height)):
+        tmp = []
         for data in datas:
-            result += render_at(data, height, y, max_value, min_value)
-        result += "\n"
-    print(result)
+            tmp.append(render_at(data, height, y, max_value, min_value))
+        result.append("".join(tmp))
+    print("\n".join(result), "\n")
 
 
 def to_height(data: float, height: int, max_value: float, min_value: float) -> float:
@@ -95,7 +96,6 @@ def main() -> None:
         reader = csv.reader(f, delimiter=",")
         next(reader)
         datas = [(float(a), float(b), float(c), float(d)) for a, b, c, d in reader]
-    print(datas[2])
     draw(datas, 30)
 
 
