@@ -105,13 +105,19 @@ impl Table {
         }
 
         let mut i = col.len();
-        loop {
+        while let Some(v) = col.pop() {
             i -= 1;
-            self.rows[i].push(col.pop().unwrap());
-            if i == 0 {
-                break;
+            self.rows[i].push(v);
+        }
+
+        let mut max_width = header.len();
+        for v in col {
+            if v.len() > max_width {
+                max_width = v.len();
             }
         }
+
+        self.max_widths.push(max_width + 3);
         self.header.push(header);
 
         Ok(())
