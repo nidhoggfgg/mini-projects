@@ -36,7 +36,7 @@ convert the number to Chinese money!
 
 ## termgraph (Python)
 
-a hack version of [termgraph]((https://github.com/sgeisler/termgraph.git)
+a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)
 but simplified!
 
 ![termgraph](./images/termgraph.png)
