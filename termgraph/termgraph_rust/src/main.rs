@@ -1,4 +1,4 @@
-use std::{env, process, path::Path, error::Error};
+use std::{env, error::Error, path::Path, process};
 
 use csv::ReaderBuilder;
 use termgraph_rust::{Candle, CandleStickGraph};
@@ -16,11 +16,9 @@ fn main() {
     };
 }
 
-fn read_csv<P: AsRef<Path>>(path: &P) -> Result<Vec<Candle>, Box<dyn Error>>{
+fn read_csv<P: AsRef<Path>>(path: &P) -> Result<Vec<Candle>, Box<dyn Error>> {
     let mut data = Vec::new();
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_path(path)?;
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_path(path)?;
 
     for some in rdr.deserialize() {
         let candle: Candle = some?;

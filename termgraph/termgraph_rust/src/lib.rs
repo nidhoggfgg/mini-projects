@@ -1,19 +1,18 @@
 use serde::Deserialize;
 
-const GREEN: &'static str = "\x1B[32m";
-const RED: &'static str = "\x1B[31m";
-#[allow(dead_code)]
-const RESET: &'static str = "\x1B[0m";
+const GREEN: &str = "\x1B[32m";
+const RED: &str = "\x1B[31m";
+const RESET: &str = "\x1B[0m";
 
-const SYMBOL_STICK: &'static str = "│";
-const SYMBOL_CANDLE: &'static str = "┃";
-const SYMBOL_TOP: &'static str = "╽";
-const SYMBOL_BOTTOM: &'static str = "╿";
-const SYMBOL_CANDLE_TOP: &'static str = "╻";
-const SYMBOL_CANDLE_BOTTOM: &'static str = "╹";
-const SYMBOL_STICK_TOP: &'static str = "╷";
-const SYMBOL_STICK_BOTTOM: &'static str = "╵";
-const SYMBOL_NOTHING: &'static str = " ";
+const SYMBOL_STICK: &str = "│";
+const SYMBOL_CANDLE: &str = "┃";
+const SYMBOL_TOP: &str = "╽";
+const SYMBOL_BOTTOM: &str = "╿";
+const SYMBOL_CANDLE_TOP: &str = "╻";
+const SYMBOL_CANDLE_BOTTOM: &str = "╹";
+const SYMBOL_STICK_TOP: &str = "╷";
+const SYMBOL_STICK_BOTTOM: &str = "╵";
+const SYMBOL_NOTHING: &str = " ";
 
 pub enum PriceMove {
     Up,
@@ -40,19 +39,19 @@ impl Candle {
 
     #[inline]
     pub fn top_candle(&self) -> f64 {
-        if self.open < self.close { self.close } else { self.open }
+        if self.open < self.close {
+            self.close
+        } else {
+            self.open
+        }
     }
 
     #[inline]
     pub fn bottom_candle(&self) -> f64 {
-        if self.open > self.close { self.close } else { self.open }
-    }
-
-    fn price_move(&self) -> PriceMove {
-        if self.open < self.close {
-            PriceMove::Up
+        if self.open > self.close {
+            self.close
         } else {
-            PriceMove::Down
+            self.open
         }
     }
 }
@@ -61,7 +60,7 @@ pub struct CandleStickGraph<'a> {
     global_max: f64,
     global_min: f64,
     data: &'a [Candle],
-    height: u64
+    height: u64,
 }
 
 impl<'a> CandleStickGraph<'a> {
@@ -69,97 +68,88 @@ impl<'a> CandleStickGraph<'a> {
         let global_max = Self::calc_global_max(data);
         let global_min = Self::calc_global_min(data);
 
-        CandleStickGraph { global_max, global_min, data, height, }
+        CandleStickGraph {
+            global_max,
+            global_min,
+            data,
+            height,
+        }
     }
 
     pub fn draw(&self) {
         for y in (0..self.height).rev() {
             for candle in self.data {
-                self.render_at(candle, y);
+                print!("{}", self.render_at(candle, y));
             }
-            println!("");
+            println!();
         }
-        println!("");
+        println!();
     }
 
-    pub fn render_at(&self, candle: &Candle, y_axis: u64) {
+    pub fn render_at(&self, candle: &Candle, y_axis: u64) -> String {
         let y_axis = y_axis as f64;
         let top_stick = self.to_y(candle.high);
         let bottom_stick = self.to_y(candle.low);
         let top_candle = self.to_y(candle.top_candle());
         let bottom_candle = self.to_y(candle.bottom_candle());
 
+        let color = if candle.open < candle.close {
+            RED
+        } else {
+            GREEN
+        };
+
         if top_candle.floor() <= y_axis && y_axis <= top_stick.ceil() {
             if top_candle - y_axis > 0.75 {
-                self.print_with_color(candle, SYMBOL_CANDLE);
-                return;
+                return format!("{}{}", color, SYMBOL_CANDLE);
             }
 
             if top_candle - y_axis > 0.25 {
                 if top_stick - y_axis > 0.75 {
-                    self.print_with_color(candle, SYMBOL_TOP);
-                    return;
+                    return format!("{}{}", color, SYMBOL_TOP);
                 }
-                self.print_with_color(candle, SYMBOL_CANDLE_TOP);
-                return;
+                return format!("{}{}", color, SYMBOL_CANDLE_TOP);
             }
 
             if top_stick - y_axis > 0.75 {
-                self.print_with_color(candle, SYMBOL_STICK);
-                return;
+                return format!("{}{}", color, SYMBOL_STICK);
             }
 
             if top_stick - y_axis > 0.25 {
-                self.print_with_color(candle, SYMBOL_STICK_TOP);
-                return;
+                return format!("{}{}", color, SYMBOL_STICK_TOP);
             }
 
-            print!("{}", SYMBOL_NOTHING);
-            return;
+            return format!("{}{}", RESET, SYMBOL_NOTHING);
         }
 
         if bottom_candle.ceil() <= y_axis && y_axis <= top_candle.floor() {
-            self.print_with_color(candle, SYMBOL_CANDLE);
-            return;
+            return format!("{}{}", color, SYMBOL_CANDLE);
         }
 
         if bottom_stick.floor() <= y_axis && y_axis <= bottom_candle.ceil() {
             if bottom_candle - y_axis < 0.25 {
-                self.print_with_color(candle, SYMBOL_CANDLE);
-                return;
+                return format!("{}{}", color, SYMBOL_CANDLE);
             }
 
             if bottom_candle - y_axis < 0.75 {
                 if bottom_stick - y_axis < 0.25 {
-                    self.print_with_color(candle, SYMBOL_BOTTOM);
-                    return;
+                    return format!("{}{}", color, SYMBOL_BOTTOM);
                 }
-                self.print_with_color(candle, SYMBOL_CANDLE_BOTTOM);
-                return;
+                return format!("{}{}", color, SYMBOL_CANDLE_BOTTOM);
             }
 
             if bottom_stick - y_axis < 0.25 {
-                self.print_with_color(candle, SYMBOL_STICK);
-                return;
+                return format!("{}{}", color, SYMBOL_STICK);
             }
 
             if bottom_stick - y_axis < 0.75 {
-                self.print_with_color(candle, SYMBOL_STICK_BOTTOM);
-                return;
+                return format!("{}{}", color, SYMBOL_STICK_BOTTOM);
             }
 
-            print!("{}", SYMBOL_NOTHING);
-            return;
+            return format!("{}{}", RESET, SYMBOL_NOTHING);
         }
 
-        print!(" ");
-    }
-
-    fn print_with_color(&self, candle: &Candle, c: &'static str) {
-        match candle.price_move() {
-            PriceMove::Down => print!("{}{}", GREEN, c),
-            PriceMove::Up => print!("{}{}", RED, c),
-        }
+        format!("{}{}", RESET, SYMBOL_NOTHING)
     }
 
     #[inline]
