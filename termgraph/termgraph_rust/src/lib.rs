@@ -112,11 +112,11 @@ impl<'a> CandleStickGraph<'a> {
             }
 
             if top_stick - y_axis > 0.75 {
-                return format!("{}{}", color, SYMBOL_STICK);
+                return format!("{}{}", RESET, SYMBOL_STICK);
             }
 
             if top_stick - y_axis > 0.25 {
-                return format!("{}{}", color, SYMBOL_STICK_TOP);
+                return format!("{}{}", RESET, SYMBOL_STICK_TOP);
             }
 
             return format!("{}{}", RESET, SYMBOL_NOTHING);
@@ -139,11 +139,11 @@ impl<'a> CandleStickGraph<'a> {
             }
 
             if bottom_stick - y_axis < 0.25 {
-                return format!("{}{}", color, SYMBOL_STICK);
+                return format!("{}{}", RESET, SYMBOL_STICK);
             }
 
             if bottom_stick - y_axis < 0.75 {
-                return format!("{}{}", color, SYMBOL_STICK_BOTTOM);
+                return format!("{}{}", RESET, SYMBOL_STICK_BOTTOM);
             }
 
             return format!("{}{}", RESET, SYMBOL_NOTHING);
