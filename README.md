@@ -1,6 +1,14 @@
 # for-beginners
 
 some practical, mini and easy projects to help beginner used to writing code!
+all the projects is for study and practice not for product!
+
+## termgraph (Python, Rust)
+
+a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)
+but simplified!
+
+![termgraph](./images/termgraph_colored.png)
 
 ## framed-text (Python, Rust)
 
@@ -33,11 +41,3 @@ hide the information in a invisible way!
 convert the number to Chinese money!
 
 ![convert money](./images/convert_money.png)
-
-## termgraph (Python)
-
-a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)
-but simplified!
-
-![termgraph](./images/termgraph.png)
-
