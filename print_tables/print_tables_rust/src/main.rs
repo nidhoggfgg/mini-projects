@@ -8,11 +8,11 @@ fn main() {
     let mut data = Vec::new();
     let line1: Vec<String> = vec!["nidhoggfgg", "22", "100000"]
         .iter()
-        .map(|a| a.to_string())
+        .map(ToString::to_string)
         .collect();
     let line2: Vec<String> = vec!["Some", "999", "9999"]
         .iter()
-        .map(|a| a.to_string())
+        .map(ToString::to_string)
         .collect();
     data.push(line1);
     data.push(line2);
@@ -30,7 +30,7 @@ fn main() {
 
     let col: Vec<String> = vec!["Chinese", "Fucking"]
         .iter()
-        .map(|a| a.to_string())
+        .map(ToString::to_string)
         .collect();
 
     if let Err(err) = some.push_col(col, "country".to_string()) {
