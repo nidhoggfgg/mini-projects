@@ -5,7 +5,6 @@ Cargo.lock
 **/*.rs.bk
 
 ### python
-
 __pycache__/
 .venv
 .mypy_cache/
