@@ -1,5 +1,7 @@
 # for-beginners
 
+[中文](./README_cn.md)
+
 some practical, mini and easy projects to help beginner used to writing code!
 all the projects is for study and practice not for product!
 
