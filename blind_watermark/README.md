@@ -1,5 +1,7 @@
 # hide information in text or picture
 
+[中文](./README_cn.md)
+
 ## blind-watermark-text
 
 hide text in text.
