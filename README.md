@@ -44,7 +44,7 @@ convert the number to Chinese money!
 
 ![convert money](./images/convert_money.png)
 
-## spark (Python)
+## spark (Python, Rust)
 
 a hack version of [spark](https://github.com/holman/spark)!
 there is nothing hard in this hack version!
