@@ -16,7 +16,7 @@ def spark(values: list[str]) -> None:
     f = max(f, 1)
 
     for n in numbers:
-        tmp = int((n - min_number) // f)
+        tmp = int((n - min_number) / f)
         print(ticks[tmp], end="")
     print()
 
