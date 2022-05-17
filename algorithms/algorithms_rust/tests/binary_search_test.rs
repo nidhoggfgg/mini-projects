@@ -1,4 +1,4 @@
-use algorithms::binary_search::rank;
+use algorithms::other::binary_search::rank;
 
 #[test]
 fn for_isize() {
