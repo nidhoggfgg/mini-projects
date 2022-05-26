@@ -1,10 +1,10 @@
 pub fn insertion_sort<T: PartialOrd>(array: &mut [T]) {
     for i in 1..array.len() {
         for j in (1..i).rev() {
-            if array[j] > array[j-1] {
+            if array[j] > array[j - 1] {
                 break;
             }
-            array.swap(j, j-1);
+            array.swap(j, j - 1);
         }
     }
 }
