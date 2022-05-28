@@ -25,8 +25,8 @@ fn merge<T: PartialOrd + Copy>(array: &mut [T], mid: usize) {
 
 #[cfg(test)]
 mod tests {
-    use rand::prelude::*;
     use super::*;
+    use rand::prelude::*;
 
     #[test]
     fn random() {
