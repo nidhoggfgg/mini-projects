@@ -84,7 +84,8 @@ impl MT19937 {
 
         self.mti = (self.mti + 1) % 624;
 
-        0xffffffff & y
+        // 0xffff_ffff & y
+        y
     }
 
     fn twist(&mut self) {
@@ -93,7 +94,7 @@ impl MT19937 {
             self.mt[i] = (y >> 1) ^ self.mt[(i + 397) % 624];
 
             if y % 2 != 0 {
-                self.mt[i] = self.mt[i] ^ 0x9908b0df;
+                self.mt[i] ^= 0x9908b0df;
             }
         }
     }
