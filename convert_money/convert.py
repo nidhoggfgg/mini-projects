@@ -1,57 +1,131 @@
-def convert(num):
-    """convert number to the representation of Chinese money"""
+#!/usr/bin/env python
+import math
+from typing import Callable, Generator, Optional
+
+
+def convert(num: float) -> Optional[str]:
+    """转换数字为规范的书写格式"""
     splited = _split(num)
+    if splited is None:
+        return None
+    integer, (frac0, frac1) = splited
 
-    primary_unit = ["", "万", "亿",  "兆"]
-    prefix_unit = ["", "拾", "佰", "仟"]
-    bits = {
-        0: "零", 1: "壹", 2: "贰", 3: "叁", 4: "肆",
-        5: "伍", 6: "陆", 7: "柒", 8: "捌", 9: "玖"
-    }
+    # 超过 9999_9999_9999_9999
+    if len(integer) > 16:
+        return None
 
-    #     ...    亿 亿 亿  亿  万 万 万 万
-    #     ...    千 百 十     千 百 十     千 百 十
-    # i = ... 11 10 9  8  7  6  5  4  3  2  1 0
-    result = []
-    for (i, p) in enumerate(splited[2:]):
-        if p == 0:
-            result.append(f"{bits[0]}")
-        else:
-            primary = primary_unit[i // 4]
-            prefix = prefix_unit[i % 4]
-            result.append(f"{bits[p]}{prefix}{primary}")
+    chunks = []
+    for chunk in _cut(integer):
+        chunks.append(chunk)
 
-    result.reverse()
-    result.append("元")
+    result = ""
+    suffix = ["仟", "佰", "拾", ""]
+    transer = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"]
+    primarys = ["万亿", "亿", "万", ""]
 
-    # the splited[1] is x of .xy, splited[0] is y of .xy
-    if splited[1] != 0:
-        result.append(f"{bits[splited[1]]}角")
-    if splited[0] != 0:
-        result.append(f"{bits[splited[0]]}分")
+    # 待填入 0 标志
+    is_zero = False
+    for i, chunk in enumerate(chunks[::-1]):
+        index = 4 - len(chunks) + i
+        tmp, (start_zero, end_zero) = _convert_chunk(
+            chunk, suffix, transer, primarys[index]
+        )
 
-    return "".join(result)
+        # 稍后再填入 0，因为可能无需填 0
+        if not tmp:
+            is_zero = True
+            continue
 
+        if i > 0 and (is_zero or start_zero):
+            result += "零"
 
-def _split(num):
-    """split the num to a list of every bits of it"""
-    # xxxx.xx => xxxxxx
-    num = num * 100
+        result += tmp
 
-    result = []
-    for i in range(16):
-        tmp = num // 10 ** i
-        if tmp == 0:
-            return result
-        result.append(tmp % 10)
+        # 尾部含 0 即待填入 0
+        is_zero = end_zero
+
+    full_zero = integer[-1] == 0 and len(integer) == 1
+    if not full_zero:
+        result += "圆"
+
+    if not full_zero and frac0 == 0 and frac1 == 0:
+        result += "整"
+        return result
+
+    if frac0 != 0:
+        result += f"{transer[frac0]}角"
+
+    if frac1 != 0:
+        result += f"{transer[frac1]}分"
 
     return result
 
 
-def main():
-    a = 10234506007890.02
-    print(f"convert {a} to")
-    print(convert(a))
+def _split(num: float) -> Optional[tuple[list[int], tuple[int, int]]]:
+    """将数字划分为小数和整数部分，保留两位小数，不足补 0"""
+    if not math.isfinite(num) or num < 0:
+        return None
+
+    tmp = f"{num}"
+    snum = tmp.split(".")
+
+    _integer = list(snum[0])
+    integer = [int(x) for x in _integer]
+    if len(snum) == 2:
+        fracs = snum[1]
+        if len(fracs) == 2:
+            return integer, (int(fracs[0]), int(fracs[1]))
+
+        return integer, (int(fracs[0]), 0)
+    return integer, (0, 0)
+
+
+def _convert_chunk(
+    chunk: list[int], suffix: list[str], transer: list[str], primary: str
+) -> tuple[str, tuple[bool, bool]]:
+    """将 4 位数字转化为指定格式，并返回头部和尾部是否为 0"""
+    result = ""
+
+    if len(set(chunk)) == 1 and chunk[0] == 0:
+        return result, (True, True)
+
+    make_unit: Callable[[int], str] = lambda i: transer[chunk[i]] + suffix[i]
+
+    zero = False
+    if chunk[0] != 0:
+        result = make_unit(0)
+        zero = True
+
+    if chunk[1] != 0:
+        result += make_unit(1)
+        zero = True
+    elif zero and (chunk[2] != 0 or chunk[3] != 0):
+        result += "零"
+        zero = False
+
+    if chunk[2] != 0:
+        result += make_unit(2)
+    elif zero and chunk[3] != 0:
+        result += "零"
+
+    if chunk[3] != 0:
+        result += make_unit(3)
+
+    result += primary
+    return result, (chunk[0] == 0, chunk[3] == 0)
+
+
+def _cut(some: list[int]) -> Generator[list[int], None, None]:
+    """将给定 list 切分为长度为 4 的 list，逆序，不足补 0"""
+    while len(some) > 4:
+        yield some[-4:]
+        some = some[:-4]
+
+    yield [0] * (4 - len(some)) + some
+
+
+def main() -> None:
+    print(convert(101_0000_0345.67))
 
 
 if __name__ == "__main__":
