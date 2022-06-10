@@ -38,12 +38,6 @@ hide the information in a invisible way!
 
 ![hide-text](./images/blind-watermark-text.png)
 
-## convert money (Python)
-
-convert the number to Chinese money!
-
-![convert money](./images/convert_money.png)
-
 ## spark (Python, Rust)
 
 a hack version of [spark](https://github.com/holman/spark)!
