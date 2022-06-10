@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import sys
 from typing import Callable, Generator, Optional
 
 
@@ -125,7 +126,20 @@ def _cut(some: list[int]) -> Generator[list[int], None, None]:
 
 
 def main() -> None:
-    print(convert(101_0000_0345.67))
+    if len(sys.argv) != 2:
+        _help(sys.argv[0])
+        return
+
+    result = convert(float(sys.argv[1]))
+    if result:
+        print(result)
+        return
+
+    print("转换失败")
+
+
+def _help(name: str) -> None:
+    print(f"用法: {name} <数字>")
 
 
 if __name__ == "__main__":
