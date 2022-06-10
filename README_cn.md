@@ -5,7 +5,6 @@
 
 ## 终端中看股票 (Python, Rust)
 
-
 一个 [termgraph](https://github.com/sgeisler/termgraph.git) 的复刻版，但是简化过了(简化了代码，没有简化功能)。
 python 的版本只包含 2 个主要的函数，还很简短也不复杂！
 
@@ -37,8 +36,13 @@ python 的版本只包含 2 个主要的函数，还很简短也不复杂！
 
 ![hide-text](./images/blind-watermark-text.png)
 
-## 金钱格式转化 (Python)
+## 金钱格式转化 (Python, Rust)
 
 将数字转化为正规的金额表示方式
 
-![convert money](./images/convert_money.png)
+```
+$ ./convert.py 89129487932
+捌佰玖拾壹亿贰仟玖佰肆拾捌万柒仟玖佰叁拾贰圆整
+$ ./convert.py 7892749003240.90
+柒万亿捌仟玖佰贰拾柒亿肆仟玖佰万零叁仟贰佰肆拾圆玖角
+```
