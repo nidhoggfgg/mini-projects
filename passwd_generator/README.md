@@ -4,19 +4,23 @@ generator passwd and no need to remember it!
 
 for example:
 ```
-# every time give same auth and same target will return same passwd
-$ generator -un --auth OTZ --target google
-MU_:o8kNYO:lI5Lz
-$ generator -un --auth OTZ --target google
-MU_:o8kNYO:lI5Lz
+$ generator --auth OTZ --target facebook                                                                                                                       ✔ 
+-p-!zvtkctp.g!vy
+$ generator --auth OTZ --target google -d 24                                                                                                                   ✔ 
+bzkvl@i@dk!a_fi.ridyhta!
 
-# changed target will return different passwd
-$ generator -un --auth OTZ --target facebook
-aEeD_pdt9Xslh1Rp
+# same args will generator same passwd
+$ generator --auth OTZ --target google -d 24                                                                                                                   ✔ 
+bzkvl@i@dk!a_fi.ridyhta!
 ```
 so, using this tool, you can never remember the passwd!
 
 just remember the `auth`! pls keep the `auth` safe!
+
+use a prefix or suffix like `google:)` is not good, easy forget, the `auth` is enough.
+
+the python version and rust version are different, the rust version is more officially, the python versino just for fun.
+the rust version wouldn't changed its output.
 
 ## python
 
@@ -24,11 +28,5 @@ just see the generator.py for more infomation.
 
 ## rust
 
-just a simple implement.
-
-because the big number, it is not easy to implement same random in rust.
-so, just write a random generator with MT19937.
-same input but will produce different output between python version and rust version.
 see the source file for more information.
 
-there is no cli for rust version.
