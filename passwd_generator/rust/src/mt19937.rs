@@ -1,4 +1,3 @@
-/* copied from ../algorithms/algorithms_rust/other/mt19937.rs */
 pub struct MT19937 {
     mt: [u32; 624],
     mti: usize,
@@ -80,6 +79,21 @@ impl MT19937 {
         self.mti = (self.mti + 1) % 624;
 
         y
+    }
+
+    pub fn gen_below(&mut self, stop: u32) -> u32 {
+        self.gen_u32() % stop
+    }
+
+    pub fn choice<T: Copy>(&mut self, array: &[T]) -> T {
+        array[self.gen_below(array.len() as u32) as usize]
+    }
+
+    pub fn shuffle<T>(&mut self, array: &mut [T]) {
+        for i in (1..array.len()).rev() {
+            let j = self.gen_below(i as u32 + 1) as usize;
+            array.swap(i, j);
+        }
     }
 
     fn twist(&mut self) {

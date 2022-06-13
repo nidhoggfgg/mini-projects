@@ -19,23 +19,6 @@ pub fn gen_passwd(
 
 mod mt19937;
 
-impl mt19937::MT19937 {
-    fn choice<T: Copy>(&mut self, array: &[T]) -> T {
-        array[self.gen_below(array.len() as u32) as usize]
-    }
-
-    fn shuffle<T>(&mut self, array: &mut [T]) {
-        for i in (1..array.len()).rev() {
-            let j = self.gen_below(i as u32 + 1) as usize;
-            array.swap(i, j);
-        }
-    }
-
-    fn gen_below(&mut self, stop: u32) -> u32 {
-        self.gen_u32() % stop
-    }
-}
-
 fn rng_with_seed(seed: &str) -> mt19937::MT19937 {
     let mut hasher = Sha3_512::new();
     hasher.update(seed.as_bytes());
@@ -61,28 +44,18 @@ fn _gen_passwd(seed: &str, digits: u32, uppercase: bool, number: bool, symbols: 
         return "".to_string();
     }
 
-    let mut charset = Vec::with_capacity(26);
+    let mut charset: Vec<char> = ('a'..='z').collect();
     let mut result = Vec::with_capacity(digits as usize);
 
-    for c in 'a'..='z' {
-        charset.push(c);
-    }
-
     if number {
-        let mut tmp = Vec::with_capacity(10);
-        for c in '0'..='9' {
-            tmp.push(c);
-        }
+        let tmp: Vec<char> = ('0'..='9').collect();
         result.push(rng.choice(&tmp));
         charset.extend(tmp);
         digits -= 1;
     }
 
     if uppercase {
-        let mut tmp = Vec::with_capacity(26);
-        for c in 'A'..='Z' {
-            tmp.push(c);
-        }
+        let tmp: Vec<char> = ('A'..='Z').collect();
         result.push(rng.choice(&tmp));
         charset.extend(tmp);
         digits -= 1;
@@ -92,7 +65,7 @@ fn _gen_passwd(seed: &str, digits: u32, uppercase: bool, number: bool, symbols: 
     charset.extend_from_slice(symbols);
     digits -= 1;
 
-    for _i in 0..digits {
+    for _ in 0..digits {
         result.push(rng.choice(&charset));
     }
 
