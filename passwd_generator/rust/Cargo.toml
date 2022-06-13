@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 sha3 = "^0.10.0"
+clap = { version = "^3.1.0", features = ["derive"] }
