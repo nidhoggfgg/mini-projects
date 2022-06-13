@@ -1,5 +1,15 @@
 use sha3::{Digest, Sha3_512};
 
+/// generator passwd
+/// ```
+/// use generator::gen_passwd;
+///
+/// let auth = "OTZ";
+/// let target = "facebook";
+/// let symbols = ['.', '@', '_', '-', ':', '!'];
+/// let passwd = gen_passwd(auth, target, 16, true, true, &symbols);
+/// assert_eq!(passwd, "793HjDt8_xt2cdnM");
+/// ```
 pub fn gen_passwd(
     auth: &str,
     target: &str,
@@ -8,7 +18,7 @@ pub fn gen_passwd(
     number: bool,
     symbols: &[char],
 ) -> String {
-    let salt = "";
+    let salt = "don't ​crack ​this!😱";
     let mut seed = String::new();
     seed.push_str(auth);
     seed.push_str(target);
@@ -73,4 +83,48 @@ fn _gen_passwd(seed: &str, digits: u32, uppercase: bool, number: bool, symbols: 
     let result: String = result.iter().collect();
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::gen_passwd;
+
+    #[test]
+    fn test() {
+        let symbols = ['.', '@', '_', '-', ':', '!'];
+        let auth = "jakflsd";
+        let mut result = Vec::with_capacity(25);
+        for i in 0..25 {
+            result.push(gen_passwd(auth, &i.to_string(), 16, true, true, &symbols));
+        }
+        let correct: Vec<&'static str> = vec![
+            "yeQPSe0v_raa!P2@",
+            "I0snnG._JuE@K:.C",
+            "8LKoZABRIAK-qGCs",
+            "StpO6HYkJ@UwD2r1",
+            "M2d3JRXkHK@-feL.",
+            "cc@Yeh:e7Kx4:Q:S",
+            "BSk2Jkue@Ucs6jG5",
+            "FyTO@8!07szxf-P7",
+            "hgrrxWAu:z-eNu9v",
+            "g.QL9Mo.7g.Q5M5J",
+            "vw50gdVw32S:T_L.",
+            "G5FHO-U5tCy!pPB4",
+            "s:PL2lXXg378.AwN",
+            "l6DWmtH!csRaB9ql",
+            ".TAE@bXb149Bt6s5",
+            "D7wg3!Jk@wJ52KN7",
+            "DIK.0_FpQL7V41yl",
+            "4TRSi!R@XU4ZGyGj",
+            "g7.HJMaHDKQo5CxI",
+            "J0Xhj!SgpIZ0O:a-",
+            "V8I7.RO3!FfLV2LI",
+            "nlr-CjL:3yfZ2y8K",
+            "KTVEE..MH39go7L3",
+            "0hV.CKcPBNidRxje",
+            "MA6:WO587kERY4C7",
+        ];
+
+        assert_eq!(result, correct);
+    }
 }
