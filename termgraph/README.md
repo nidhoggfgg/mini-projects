@@ -14,3 +14,4 @@ simplified, only two main function. But not include the color.
 
 include color.
 NOTE: the origin [termgraph](https://github.com/sgeisler/termgraph.git) color is wrong. fixed.
+

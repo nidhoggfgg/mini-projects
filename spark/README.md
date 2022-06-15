@@ -15,3 +15,4 @@ awk '{ print length($0) }' ../print_tables/print_tables.py | grep -Ev 0 | ./spar
 works:
 ./spark.py $( awk '{ print length($0) }' ../print_tables/print_tables.py | grep -Ev 0  )
 ```
+
