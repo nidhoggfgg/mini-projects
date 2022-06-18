@@ -1,7 +1,6 @@
-use std::{io::{self, Write}};
+use std::io::{self, Write};
 
-use calculator_rust::{lexer, parser, env::Env};
-
+use calculator_rust::{env::Env, lexer, parser};
 
 fn main() {
     let mut env = Env::new();

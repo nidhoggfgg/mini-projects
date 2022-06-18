@@ -130,14 +130,10 @@ pub mod lexer {
         }
 
         fn skip_space(&mut self) {
-            loop {
-                if let Some(c) = self.next {
-                    match c {
-                        ' ' | '\t' | '\r' | '\n' => self.eat(),
-                        _ => break,
-                    }
-                } else {
-                    break;
+            while let Some(c) = self.next {
+                match c {
+                    ' ' | '\t' | '\r' | '\n' => self.eat(),
+                    _ => break,
                 }
             }
         }
@@ -153,7 +149,7 @@ pub mod parser {
 
     use crate::{lexer::Token, utils};
 
-    use self::ast::{Stmt, Expr, Binaryop, Unaryop, Valuable};
+    use self::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
 
     pub mod ast {
         #[derive(Debug)]
@@ -244,7 +240,7 @@ pub mod parser {
                     let expr = self.expr(token)?;
                     let stmt = Stmt::ExprStmt { expr };
                     Some(Box::new(stmt))
-                },
+                }
             }
         }
 
@@ -281,7 +277,7 @@ pub mod parser {
                 return None;
             }
 
-            let start =  self.next.take()?;
+            let start = self.next.take()?;
             self.eat();
 
             let body = self.expr(start)?;
@@ -337,7 +333,7 @@ pub mod parser {
                 let start = self.next.take()?;
                 self.eat();
                 let operand = self.minus(start)?;
-                return Some(Box::new(Expr::Unary { op, operand }))
+                return Some(Box::new(Expr::Unary { op, operand }));
             }
 
             self.factorial(start)
@@ -347,7 +343,7 @@ pub mod parser {
             if self.check(Token::Bang) {
                 let op = Unaryop::Ftl;
                 let operand = self.call(start)?;
-                return Some(Box::new(Expr::Unary { op, operand }))
+                return Some(Box::new(Expr::Unary { op, operand }));
             }
 
             self.call(start)
@@ -378,7 +374,7 @@ pub mod parser {
                     return None;
                 }
 
-                return Some(Box::new(Expr::Fun { name, values }))
+                return Some(Box::new(Expr::Fun { name, values }));
             }
 
             self.primary(start)
@@ -388,10 +384,14 @@ pub mod parser {
             match start {
                 Token::Ident(name) => {
                     let i = self.args.get(&name)?;
-                    Some(Box::new(Expr::Literal { value: Valuable::Arg(*i) }))
-                },
-                Token::Number(num) => Some(Box::new(Expr::Literal { value: Valuable::Float(num) })),
-                _ => None
+                    Some(Box::new(Expr::Literal {
+                        value: Valuable::Arg(*i),
+                    }))
+                }
+                Token::Number(num) => Some(Box::new(Expr::Literal {
+                    value: Valuable::Float(num),
+                })),
+                _ => None,
             }
         }
 
@@ -425,22 +425,32 @@ pub mod parser {
 pub mod env {
     use std::collections::HashMap;
 
-    use crate::parser::ast::{Expr, Valuable, Stmt, Binaryop, Unaryop};
+    use crate::parser::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
 
     pub struct Env {
         funtions: HashMap<String, Box<Expr>>,
         values: Vec<f64>,
     }
 
+    impl Default for Env {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl Env {
         pub fn new() -> Self {
-            Env { funtions: HashMap::new(), values: Vec::new() }
+            Env {
+                funtions: HashMap::new(),
+                values: Vec::new(),
+            }
         }
 
         pub fn run(&mut self, stmt: Stmt) {
             match stmt {
                 Stmt::FunStmt { name, body } => {
-                    self.funtions.insert(name, body); },
+                    self.funtions.insert(name, body);
+                }
                 Stmt::ExprStmt { expr } => {
                     let value = expr.value(&mut self.values, &self.funtions);
                     if let Some(v) = value {
@@ -452,11 +462,16 @@ pub mod env {
     }
 
     trait CanValue {
-        fn value(&self, args: &mut Vec<f64>, functions: &HashMap<String, Box<Expr>>) -> Option<f64>;
+        fn value(&self, args: &mut Vec<f64>, functions: &HashMap<String, Box<Expr>>)
+            -> Option<f64>;
     }
 
     impl CanValue for Valuable {
-        fn value(&self, args: &mut Vec<f64>, _functions: &HashMap<String, Box<Expr>>) -> Option<f64> {
+        fn value(
+            &self,
+            args: &mut Vec<f64>,
+            _functions: &HashMap<String, Box<Expr>>,
+        ) -> Option<f64> {
             match self {
                 Self::Float(v) => Some(*v),
                 Self::Arg(i) => args.get(*i).copied(),
@@ -465,7 +480,11 @@ pub mod env {
     }
 
     impl CanValue for Expr {
-        fn value(&self, args: &mut Vec<f64>, functions: &HashMap<String, Box<Expr>>) -> Option<f64> {
+        fn value(
+            &self,
+            args: &mut Vec<f64>,
+            functions: &HashMap<String, Box<Expr>>,
+        ) -> Option<f64> {
             match self {
                 Expr::Literal { value } => value.value(args, functions),
                 Expr::Binary { left, op, right } => {
@@ -479,7 +498,7 @@ pub mod env {
                         Binaryop::Square => lv.powf(rv),
                     };
                     Some(result)
-                },
+                }
                 Expr::Fun { name, values } => {
                     args.clear();
                     for v in values {
@@ -487,7 +506,7 @@ pub mod env {
                     }
                     let body = functions.get(name)?;
                     body.value(args, functions)
-                },
+                }
                 Expr::Unary { op, operand } => {
                     let value = operand.value(args, functions)?;
                     let result = match op {
@@ -497,14 +516,11 @@ pub mod env {
                         Unaryop::Ftl => -value,
                     };
                     Some(result)
-                },
-                Expr::Group { body } => {
-                    body.value(args, functions)
                 }
+                Expr::Group { body } => body.value(args, functions),
             }
         }
     }
-
 }
 
 mod utils {
@@ -513,7 +529,7 @@ mod utils {
     }
 
     pub fn is_number(c: char) -> bool {
-        '0' <= c && c <= '9'
+        ('0'..='9').contains(&c)
     }
 
     pub fn print_err(err: &str) {
