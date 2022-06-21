@@ -1,4 +1,4 @@
-pub mod lexer {
+mod lexer {
     use std::collections::HashMap;
 
     use crate::utils;
@@ -17,7 +17,6 @@ pub mod lexer {
         Fun,
         Number(f64),
         Ident(String),
-        Eof,
         Unkown,
     }
 
@@ -142,7 +141,7 @@ pub mod lexer {
     }
 }
 
-pub mod parser {
+mod parser {
     use std::collections::HashMap;
 
     use crate::{lexer::Token, utils};
@@ -162,6 +161,7 @@ pub mod parser {
             Arg(usize),
         }
 
+        #[allow(dead_code)]
         #[derive(Debug, Clone)]
         pub enum Expr {
             Literal {
@@ -188,11 +188,10 @@ pub mod parser {
         #[derive(Debug, Clone)]
         pub enum Unaryop {
             Sub,
-            Lg,
-            Ln,
             Ftl,
         }
 
+        #[allow(dead_code)]
         #[derive(Debug, Clone)]
         pub enum Binaryop {
             Plus,
@@ -420,10 +419,10 @@ pub mod parser {
     }
 }
 
-pub mod env {
+pub mod calculator {
     use std::collections::HashMap;
 
-    use crate::parser::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
+    use crate::{parser::{ast::{Binaryop, Expr, Stmt, Unaryop, Valuable}, Parser}, lexer::Scanner};
 
     pub struct Env {
         funtions: HashMap<String, Box<Expr>>,
@@ -444,27 +443,32 @@ pub mod env {
             }
         }
 
-        pub fn run(&mut self, stmt: Stmt) {
-            match stmt {
+        pub fn run(&mut self, s: &str) -> Option<f64> {
+            let mut lexer = Scanner::new(s.chars());
+            let mut parser = Parser::new(lexer.scan().into_iter());
+            let ast = parser.parse()?;
+            self.run_impl(ast)
+        }
+
+        fn run_impl(&mut self, stmt: Box<Stmt>) -> Option<f64> {
+            match *stmt {
                 Stmt::FunStmt { name, body } => {
                     self.funtions.insert(name, body);
+                    None
                 }
                 Stmt::ExprStmt { expr } => {
-                    let value = expr.value(&mut self.values, &self.funtions);
-                    if let Some(v) = value {
-                        println!("{}", v);
-                    }
+                    expr.value(&mut self.values, &self.funtions)
                 }
             }
         }
     }
 
-    trait CanValue {
+    trait Value {
         fn value(&self, args: &mut Vec<f64>, functions: &HashMap<String, Box<Expr>>)
             -> Option<f64>;
     }
 
-    impl CanValue for Valuable {
+    impl Value for Valuable {
         fn value(
             &self,
             args: &mut Vec<f64>,
@@ -477,7 +481,7 @@ pub mod env {
         }
     }
 
-    impl CanValue for Expr {
+    impl Value for Expr {
         fn value(
             &self,
             args: &mut Vec<f64>,
@@ -508,8 +512,6 @@ pub mod env {
                 Expr::Unary { op, operand } => {
                     let value = operand.value(args, functions)?;
                     let result = match op {
-                        Unaryop::Lg => f64::log10(value),
-                        Unaryop::Ln => f64::ln(value),
                         Unaryop::Sub => -value,
                         Unaryop::Ftl => -value,
                     };
