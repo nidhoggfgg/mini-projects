@@ -14,8 +14,6 @@ pub mod lexer {
         Bang,
         Square,
         Eq,
-        Ln,
-        Lg,
         Fun,
         Number(f64),
         Ident(String),
@@ -26,7 +24,7 @@ pub mod lexer {
     pub struct Scanner<T: Iterator<Item = char>> {
         source: T,
         next: Option<char>,
-        builtin: HashMap<&'static str, Token>,
+        kw: HashMap<&'static str, Token>,
     }
 
     impl<T: Iterator<Item = char>> Scanner<T> {
@@ -34,7 +32,7 @@ pub mod lexer {
             let mut scanner = Scanner {
                 source,
                 next: None,
-                builtin: HashMap::from([("lg", Token::Lg), ("ln", Token::Ln), ("fun", Token::Fun)]),
+                kw: HashMap::from([("fun", Token::Fun)]),
             };
             scanner.eat();
             scanner
@@ -91,8 +89,8 @@ pub mod lexer {
                 }
             }
 
-            if self.builtin.contains_key(lexeme.as_str()) {
-                let builtin = self.builtin.get(lexeme.as_str()).unwrap();
+            if self.kw.contains_key(lexeme.as_str()) {
+                let builtin = self.kw.get(lexeme.as_str()).unwrap();
                 return builtin.clone();
             }
 
