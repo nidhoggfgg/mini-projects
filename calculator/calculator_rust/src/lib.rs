@@ -18,6 +18,7 @@ mod lexer {
         Number(f64),
         Ident(String),
         Unkown,
+        Eof,
     }
 
     pub struct Scanner<T: Iterator<Item = char>> {
@@ -42,6 +43,7 @@ mod lexer {
             while let Some(t) = self.scan_token() {
                 tokens.push(t);
             }
+            tokens.push(Token::Eof);
             tokens
         }
 
@@ -141,66 +143,64 @@ mod lexer {
     }
 }
 
+mod ast {
+    #[derive(Debug)]
+    pub enum Stmt {
+        FunStmt { name: String, body: Box<Expr> },
+        ExprStmt { expr: Box<Expr> },
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum Valuable {
+        Float(f64),
+        Arg(usize),
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum Expr {
+        Literal {
+            value: Valuable,
+        },
+        Group {
+            body: Box<Expr>,
+        },
+        Unary {
+            op: Unaryop,
+            operand: Box<Expr>,
+        },
+        Binary {
+            left: Box<Expr>,
+            op: Binaryop,
+            right: Box<Expr>,
+        },
+        Fun {
+            name: String,
+            values: Vec<f64>,
+        },
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum Unaryop {
+        Sub,
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum Binaryop {
+        Plus,
+        Sub,
+        Mult,
+        Div,
+        Square,
+    }
+}
+
 mod parser {
     use std::collections::HashMap;
 
+    use crate::utils::print_err;
     use crate::{lexer::Token, utils};
 
-    use self::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
-
-    pub mod ast {
-        #[derive(Debug)]
-        pub enum Stmt {
-            FunStmt { name: String, body: Box<Expr> },
-            ExprStmt { expr: Box<Expr> },
-        }
-
-        #[derive(Debug, Clone)]
-        pub enum Valuable {
-            Float(f64),
-            Arg(usize),
-        }
-
-        #[allow(dead_code)]
-        #[derive(Debug, Clone)]
-        pub enum Expr {
-            Literal {
-                value: Valuable,
-            },
-            Group {
-                body: Box<Expr>,
-            },
-            Unary {
-                op: Unaryop,
-                operand: Box<Expr>,
-            },
-            Binary {
-                left: Box<Expr>,
-                op: Binaryop,
-                right: Box<Expr>,
-            },
-            Fun {
-                name: String,
-                values: Vec<f64>,
-            },
-        }
-
-        #[derive(Debug, Clone)]
-        pub enum Unaryop {
-            Sub,
-            Ftl,
-        }
-
-        #[allow(dead_code)]
-        #[derive(Debug, Clone)]
-        pub enum Binaryop {
-            Plus,
-            Sub,
-            Mult,
-            Div,
-            Square,
-        }
-    }
+    use crate::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
 
     pub struct Parser<T: Iterator<Item = Token>> {
         tokens: T,
@@ -223,22 +223,30 @@ mod parser {
         }
 
         pub fn parse(&mut self) -> Option<Box<Stmt>> {
-            let token = if let Some(t) = self.next.take() {
-                self.eat();
-                t
-            } else {
-                return None;
-            };
+            let start = self.next.take().unwrap();
+            self.eat();
 
-            match token {
+            let stmt = match start {
                 Token::Fun => self.fun(),
-                Token::Unkown => None,
+                Token::Unkown => {
+                    print_err("invalid syntax");
+                    None
+                },
+                Token::Eof => {
+                    return None;
+                },
                 _ => {
-                    let expr = self.expr(token)?;
+                    let expr = self.expr(start)?;
                     let stmt = Stmt::ExprStmt { expr };
                     Some(Box::new(stmt))
                 }
+            };
+
+            if !self.expect(Token::Eof, "invalid syntax!") {
+                return None;
             }
+
+            stmt
         }
 
         fn fun(&mut self) -> Option<Box<Stmt>> {
@@ -306,7 +314,7 @@ mod parser {
         }
 
         fn mult_div(&mut self, start: Token) -> Option<Box<Expr>> {
-            let mut left = self.minus(start)?;
+            let mut left = self.square(start)?;
 
             while self.check(Token::Star) || self.check(Token::Slash) {
                 let op = match self.next.take()? {
@@ -314,6 +322,21 @@ mod parser {
                     Token::Slash => Binaryop::Div,
                     _ => Binaryop::Mult, // impassiable
                 };
+                self.eat();
+                let start = self.next.take()?;
+                self.eat();
+                let right = self.square(start)?;
+                left = Box::new(Expr::Binary { left, op, right })
+            }
+
+            Some(left)
+        }
+
+        fn square(&mut self, start: Token) -> Option<Box<Expr>> {
+            let mut left = self.minus(start)?;
+
+            while self.check(Token::Square) {
+                let op = Binaryop::Square;
                 self.eat();
                 let start = self.next.take()?;
                 self.eat();
@@ -330,16 +353,6 @@ mod parser {
                 let start = self.next.take()?;
                 self.eat();
                 let operand = self.minus(start)?;
-                return Some(Box::new(Expr::Unary { op, operand }));
-            }
-
-            self.factorial(start)
-        }
-
-        fn factorial(&mut self, start: Token) -> Option<Box<Expr>> {
-            if self.check(Token::Bang) {
-                let op = Unaryop::Ftl;
-                let operand = self.call(start)?;
                 return Some(Box::new(Expr::Unary { op, operand }));
             }
 
@@ -388,7 +401,19 @@ mod parser {
                 Token::Number(num) => Some(Box::new(Expr::Literal {
                     value: Valuable::Float(num),
                 })),
-                _ => None,
+                Token::LeftParen => {
+                    let start = self.next.take()?;
+                    self.eat();
+                    let v = self.expr(start)?;
+                    if !self.expect(Token::RightParen, "expect ')'") {
+                        return None;
+                    }
+                    Some(Box::new(Expr::Group { body: v }))
+                }
+                _ => {
+                    print_err("invalid syntax");
+                    None
+                }
             }
         }
 
@@ -422,7 +447,11 @@ mod parser {
 pub mod calculator {
     use std::collections::HashMap;
 
-    use crate::{parser::{ast::{Binaryop, Expr, Stmt, Unaryop, Valuable}, Parser}, lexer::Scanner};
+    use crate::{
+        ast::{Binaryop, Expr, Stmt, Unaryop, Valuable},
+        lexer::Scanner,
+        parser::Parser,
+    };
 
     pub struct Env {
         funtions: HashMap<String, Box<Expr>>,
@@ -445,7 +474,8 @@ pub mod calculator {
 
         pub fn run(&mut self, s: &str) -> Option<f64> {
             let mut lexer = Scanner::new(s.chars());
-            let mut parser = Parser::new(lexer.scan().into_iter());
+            let tokens = lexer.scan();
+            let mut parser = Parser::new(tokens.into_iter());
             let ast = parser.parse()?;
             self.run_impl(ast)
         }
@@ -456,9 +486,7 @@ pub mod calculator {
                     self.funtions.insert(name, body);
                     None
                 }
-                Stmt::ExprStmt { expr } => {
-                    expr.value(&mut self.values, &self.funtions)
-                }
+                Stmt::ExprStmt { expr } => expr.value(&mut self.values, &self.funtions),
             }
         }
     }
@@ -513,7 +541,6 @@ pub mod calculator {
                     let value = operand.value(args, functions)?;
                     let result = match op {
                         Unaryop::Sub => -value,
-                        Unaryop::Ftl => -value,
                     };
                     Some(result)
                 }
