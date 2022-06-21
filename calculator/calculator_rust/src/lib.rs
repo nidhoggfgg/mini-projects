@@ -466,7 +466,7 @@ pub mod calculator {
     };
 
     pub struct Env {
-        funtions: HashMap<String, Box<Expr>>,
+        functions: HashMap<String, Box<Expr>>,
         values: Vec<f64>,
     }
 
@@ -479,7 +479,7 @@ pub mod calculator {
     impl Env {
         pub fn new() -> Self {
             Env {
-                funtions: HashMap::new(),
+                functions: HashMap::new(),
                 values: Vec::new(),
             }
         }
@@ -495,28 +495,27 @@ pub mod calculator {
         fn run_impl(&mut self, stmt: Box<Stmt>) -> Option<f64> {
             match *stmt {
                 Stmt::FunStmt { name, body } => {
-                    self.funtions.insert(name, body);
+                    self.functions.insert(name, body);
                     None
                 }
-                Stmt::ExprStmt { expr } => expr.value(&mut self.values, &self.funtions),
+                Stmt::ExprStmt { expr } => expr.value(self),
             }
         }
     }
 
     trait Value {
-        fn value(&self, args: &mut Vec<f64>, functions: &HashMap<String, Box<Expr>>)
+        fn value(&self, env: &mut Env)
             -> Option<f64>;
     }
 
     impl Value for Valuable {
         fn value(
             &self,
-            args: &mut Vec<f64>,
-            _functions: &HashMap<String, Box<Expr>>,
+            env: &mut Env,
         ) -> Option<f64> {
             match self {
                 Self::Float(v) => Some(*v),
-                Self::Arg(i) => args.get(*i).copied(),
+                Self::Arg(i) => env.values.get(*i).copied(),
             }
         }
     }
@@ -524,14 +523,13 @@ pub mod calculator {
     impl Value for Expr {
         fn value(
             &self,
-            args: &mut Vec<f64>,
-            functions: &HashMap<String, Box<Expr>>,
+            env: &mut Env
         ) -> Option<f64> {
             match self {
-                Expr::Literal { value } => value.value(args, functions),
+                Expr::Literal { value } => value.value(env),
                 Expr::Binary { left, op, right } => {
-                    let lv = left.value(args, functions)?;
-                    let rv = right.value(args, functions)?;
+                    let lv = left.value(env)?;
+                    let rv = right.value(env)?;
                     let result = match op {
                         Binaryop::Plus => lv + rv,
                         Binaryop::Sub => lv - rv,
@@ -542,22 +540,24 @@ pub mod calculator {
                     Some(result)
                 }
                 Expr::Fun { name, values } => {
-                    args.clear();
+                    env.values.clear();
                     for v in values {
-                        args.push(*v);
+                        env.values.push(*v);
                     }
-                    let body = functions.get(name)?;
-                    body.value(args, functions)
+                    let (name, body) = env.functions.remove_entry(name)?;
+                    let result = body.value(env);
+                    env.functions.insert(name, body);
+                    result
                 }
                 Expr::Unary { op, operand } => {
-                    let value = operand.value(args, functions)?;
+                    let value = operand.value(env)?;
                     let result = match op {
                         Unaryop::Sub => -value,
                         Unaryop::Ftl => utils::factorial(value as u32)
                     };
                     Some(result)
                 }
-                Expr::Group { body } => body.value(args, functions),
+                Expr::Group { body } => body.value(env),
             }
         }
     }
