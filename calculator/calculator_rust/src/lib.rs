@@ -182,6 +182,7 @@ mod ast {
     #[derive(Debug, Clone)]
     pub enum Unaryop {
         Sub,
+        Ftl,
     }
 
     #[derive(Debug, Clone)]
@@ -356,7 +357,18 @@ mod parser {
                 return Some(Box::new(Expr::Unary { op, operand }));
             }
 
-            self.call(start)
+            self.factorial(start)
+        }
+
+        fn factorial(&mut self, start: Token) -> Option<Box<Expr>> {
+            let mut operand = self.call(start)?;
+
+            if self.check(Token::Bang) {
+                let op = Unaryop::Ftl;
+                self.eat();
+                operand = Box::new(Expr::Unary { op, operand, });
+            }
+            Some(operand)
         }
 
         fn call(&mut self, start: Token) -> Option<Box<Expr>> {
@@ -450,7 +462,7 @@ pub mod calculator {
     use crate::{
         ast::{Binaryop, Expr, Stmt, Unaryop, Valuable},
         lexer::Scanner,
-        parser::Parser,
+        parser::Parser, utils,
     };
 
     pub struct Env {
@@ -541,6 +553,7 @@ pub mod calculator {
                     let value = operand.value(args, functions)?;
                     let result = match op {
                         Unaryop::Sub => -value,
+                        Unaryop::Ftl => utils::factorial(value as u32)
                     };
                     Some(result)
                 }
@@ -561,5 +574,13 @@ mod utils {
 
     pub fn print_err(err: &str) {
         println!("{}", err);
+    }
+
+    pub fn factorial(num: u32) -> f64 {
+        let mut result: u32 = 1;
+        for i in 2..=num {
+            result = result.wrapping_mul(i);
+        }
+        result as f64
     }
 }
