@@ -467,7 +467,8 @@ pub mod calculator {
 
     pub struct Env {
         functions: HashMap<String, Box<Expr>>,
-        values: Vec<f64>,
+        locals: Vec<f64>,
+        builtin: HashMap<&'static str, Box<dyn Fn(f64) -> f64>>,
     }
 
     impl Default for Env {
@@ -478,9 +479,14 @@ pub mod calculator {
 
     impl Env {
         pub fn new() -> Self {
+            let builtin = HashMap::from([
+                ("ln", Box::new(|x| f64::ln(x)) as Box<_>),
+                ("lg", Box::new(|x| f64::log10(x)) as Box<_>),
+            ]);
             Env {
                 functions: HashMap::new(),
-                values: Vec::new(),
+                locals: Vec::new(),
+                builtin,
             }
         }
 
@@ -515,7 +521,7 @@ pub mod calculator {
         ) -> Option<f64> {
             match self {
                 Self::Float(v) => Some(*v),
-                Self::Arg(i) => env.values.get(*i).copied(),
+                Self::Arg(i) => env.locals.get(*i).copied(),
             }
         }
     }
@@ -540,14 +546,19 @@ pub mod calculator {
                     Some(result)
                 }
                 Expr::Fun { name, values } => {
-                    env.values.clear();
+                    env.locals.clear();
                     for v in values {
-                        env.values.push(*v);
+                        env.locals.push(*v);
                     }
-                    let (name, body) = env.functions.remove_entry(name)?;
-                    let result = body.value(env);
-                    env.functions.insert(name, body);
-                    result
+                    if let Some((name, body)) = env.functions.remove_entry(name) {
+                        let result = body.value(env);
+                        env.functions.insert(name, body);
+                        result
+                    } else if let Some(f) = env.builtin.get(name.as_str()) {
+                        Some(f(values[0]))
+                    } else {
+                        None
+                    }
                 }
                 Expr::Unary { op, operand } => {
                     let value = operand.value(env)?;
