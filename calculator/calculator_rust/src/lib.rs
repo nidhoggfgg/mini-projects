@@ -511,14 +511,20 @@ pub mod calculator {
     impl Env {
         pub fn new() -> Self {
             let builtin = HashMap::from([
-                ("ln", Box::new(|x| f64::ln(x)) as Box<_>),
-                ("lg", Box::new(|x| f64::log10(x)) as Box<_>),
+                ("ln", Box::new(f64::ln) as Box<_>),
+                ("lg", Box::new(f64::log10) as Box<_>),
+                ("exp", Box::new(f64::exp) as Box<_>)
+            ]);
+
+            let global = HashMap::from([
+                ("PI".into(), std::f64::consts::PI),
+                ("E".into(), std::f64::consts::E),
             ]);
             Env {
                 functions: HashMap::new(),
                 locals: Vec::new(),
                 builtin,
-                global: HashMap::new(),
+                global,
             }
         }
 
