@@ -147,6 +147,7 @@ mod ast {
     #[derive(Debug)]
     pub enum Stmt {
         FunStmt { name: String, body: Box<Expr> },
+        AssignStmt { name: String, expr: Box<Expr> },
         ExprStmt { expr: Box<Expr> },
     }
 
@@ -154,6 +155,7 @@ mod ast {
     pub enum Valuable {
         Float(f64),
         Arg(usize),
+        Var(String),
     }
 
     #[derive(Debug, Clone)]
@@ -232,10 +234,11 @@ mod parser {
                 Token::Unkown => {
                     print_err("invalid syntax");
                     None
-                },
+                }
                 Token::Eof => {
                     return None;
-                },
+                }
+                Token::Ident(_) => self.assign(start),
                 _ => {
                     let expr = self.expr(start)?;
                     let stmt = Stmt::ExprStmt { expr };
@@ -248,6 +251,27 @@ mod parser {
             }
 
             stmt
+        }
+
+        fn assign(&mut self, start: Token) -> Option<Box<Stmt>> {
+            if !self.check(Token::Eq) {
+                let expr = self.expr(start)?;
+                return Some(Box::new(Stmt::ExprStmt { expr }));
+            }
+            self.eat();
+
+            let expr_start = self.next.take().unwrap();
+            self.eat();
+
+            let name = if let Token::Ident(name) = start {
+                name
+            } else {
+                print_err("error");
+                return None;
+            };
+
+            let expr = self.expr(expr_start)?;
+            Some(Box::new(Stmt::AssignStmt { name, expr }))
         }
 
         fn fun(&mut self) -> Option<Box<Stmt>> {
@@ -366,7 +390,7 @@ mod parser {
             if self.check(Token::Bang) {
                 let op = Unaryop::Ftl;
                 self.eat();
-                operand = Box::new(Expr::Unary { op, operand, });
+                operand = Box::new(Expr::Unary { op, operand });
             }
             Some(operand)
         }
@@ -405,10 +429,15 @@ mod parser {
         fn primary(&mut self, start: Token) -> Option<Box<Expr>> {
             match start {
                 Token::Ident(name) => {
-                    let i = self.args.get(&name)?;
-                    Some(Box::new(Expr::Literal {
-                        value: Valuable::Arg(*i),
-                    }))
+                    if let Some(i) = self.args.get(&name) {
+                        Some(Box::new(Expr::Literal {
+                            value: Valuable::Arg(*i),
+                        }))
+                    } else {
+                        Some(Box::new(Expr::Literal {
+                            value: Valuable::Var(name),
+                        }))
+                    }
                 }
                 Token::Number(num) => Some(Box::new(Expr::Literal {
                     value: Valuable::Float(num),
@@ -462,13 +491,15 @@ pub mod calculator {
     use crate::{
         ast::{Binaryop, Expr, Stmt, Unaryop, Valuable},
         lexer::Scanner,
-        parser::Parser, utils,
+        parser::Parser,
+        utils,
     };
 
     pub struct Env {
         functions: HashMap<String, Box<Expr>>,
         locals: Vec<f64>,
         builtin: HashMap<&'static str, Box<dyn Fn(f64) -> f64>>,
+        global: HashMap<String, f64>,
     }
 
     impl Default for Env {
@@ -487,6 +518,7 @@ pub mod calculator {
                 functions: HashMap::new(),
                 locals: Vec::new(),
                 builtin,
+                global: HashMap::new(),
             }
         }
 
@@ -505,32 +537,31 @@ pub mod calculator {
                     None
                 }
                 Stmt::ExprStmt { expr } => expr.value(self),
+                Stmt::AssignStmt { name, expr } => {
+                    let value = expr.value(self)?;
+                    self.global.insert(name, value);
+                    None
+                }
             }
         }
     }
 
     trait Value {
-        fn value(&self, env: &mut Env)
-            -> Option<f64>;
+        fn value(&self, env: &mut Env) -> Option<f64>;
     }
 
     impl Value for Valuable {
-        fn value(
-            &self,
-            env: &mut Env,
-        ) -> Option<f64> {
+        fn value(&self, env: &mut Env) -> Option<f64> {
             match self {
                 Self::Float(v) => Some(*v),
                 Self::Arg(i) => env.locals.get(*i).copied(),
+                Self::Var(name) => env.global.get(name).copied(),
             }
         }
     }
 
     impl Value for Expr {
-        fn value(
-            &self,
-            env: &mut Env
-        ) -> Option<f64> {
+        fn value(&self, env: &mut Env) -> Option<f64> {
             match self {
                 Expr::Literal { value } => value.value(env),
                 Expr::Binary { left, op, right } => {
@@ -564,7 +595,7 @@ pub mod calculator {
                     let value = operand.value(env)?;
                     let result = match op {
                         Unaryop::Sub => -value,
-                        Unaryop::Ftl => utils::factorial(value as u32)
+                        Unaryop::Ftl => utils::factorial(value as u32),
                     };
                     Some(result)
                 }
