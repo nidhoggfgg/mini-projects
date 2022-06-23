@@ -49,15 +49,11 @@ mod lexer {
 
         fn scan_token(&mut self) -> Option<Token> {
             self.skip_space();
-            let c = if let Some(c) = self.next {
-                self.eat();
-                c
-            } else {
-                return None;
-            };
+            let c = self.next.take()?;
+            self.eat();
 
             if utils::is_identifier_start(c) {
-                return Some(self.ident_or_builtin(c));
+                return Some(self.ident_or_kw(c));
             }
 
             let token = match c {
@@ -77,8 +73,8 @@ mod lexer {
             Some(token)
         }
 
-        fn ident_or_builtin(&mut self, start: char) -> Token {
-            let mut lexeme = String::with_capacity(8);
+        fn ident_or_kw(&mut self, start: char) -> Token {
+            let mut lexeme = String::with_capacity(4);
             lexeme.push(start);
 
             while let Some(c) = self.next {
@@ -91,15 +87,15 @@ mod lexer {
             }
 
             if self.kw.contains_key(lexeme.as_str()) {
-                let builtin = self.kw.get(lexeme.as_str()).unwrap();
-                return builtin.clone();
+                let kw = self.kw.get(lexeme.as_str()).unwrap();
+                return kw.clone();
             }
 
             Token::Ident(lexeme)
         }
 
         fn number(&mut self, start: char) -> Token {
-            let mut lexeme = String::with_capacity(8);
+            let mut lexeme = String::with_capacity(4);
             lexeme.push(start);
             while let Some(c) = self.next {
                 if utils::is_number(c) {
@@ -116,8 +112,8 @@ mod lexer {
 
                 while let Some(c) = self.next {
                     if utils::is_number(c) {
-                        self.eat();
                         lexeme.push(c);
+                        self.eat();
                     } else {
                         break;
                     }
@@ -146,19 +142,19 @@ mod lexer {
 mod ast {
     #[derive(Debug)]
     pub enum Stmt {
-        FunStmt { name: String, body: Box<Expr> },
-        AssignStmt { name: String, expr: Box<Expr> },
-        ExprStmt { expr: Box<Expr> },
+        Fun { name: String, body: Box<Expr> },
+        Assign { name: String, expr: Box<Expr> },
+        Expr { expr: Box<Expr> },
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub enum Valuable {
-        Float(f64),
+        Value(f64),
         Arg(usize),
         Var(String),
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub enum Expr {
         Literal {
             value: Valuable,
@@ -167,28 +163,28 @@ mod ast {
             body: Box<Expr>,
         },
         Unary {
-            op: Unaryop,
+            op: UnaryOp,
             operand: Box<Expr>,
         },
         Binary {
             left: Box<Expr>,
-            op: Binaryop,
+            op: BinaryOp,
             right: Box<Expr>,
         },
         Fun {
             name: String,
-            values: Vec<f64>,
+            locals: Vec<f64>,
         },
     }
 
     #[derive(Debug, Clone)]
-    pub enum Unaryop {
-        Sub,
+    pub enum UnaryOp {
+        Minus,
         Ftl,
     }
 
     #[derive(Debug, Clone)]
-    pub enum Binaryop {
+    pub enum BinaryOp {
         Plus,
         Sub,
         Mult,
@@ -200,16 +196,14 @@ mod ast {
 mod parser {
     use std::collections::HashMap;
 
+    use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable};
+    use crate::lexer::Token;
     use crate::utils::print_err;
-    use crate::{lexer::Token, utils};
-
-    use crate::ast::{Binaryop, Expr, Stmt, Unaryop, Valuable};
 
     pub struct Parser<T: Iterator<Item = Token>> {
         tokens: T,
         next: Option<Token>,
         args: HashMap<String, usize>,
-        count: usize,
     }
 
     impl<T: Iterator<Item = Token>> Parser<T> {
@@ -218,7 +212,6 @@ mod parser {
                 tokens,
                 next: None,
                 args: HashMap::new(),
-                count: 0,
             };
 
             parser.eat();
@@ -226,22 +219,21 @@ mod parser {
         }
 
         pub fn parse(&mut self) -> Option<Box<Stmt>> {
-            let start = self.next.take().unwrap();
-            self.eat();
+            let start = self.next().unwrap();
 
             let stmt = match start {
                 Token::Fun => self.fun(),
+                Token::Ident(_) => self.assign(start),
+                Token::Eof => {
+                    return None;
+                }
                 Token::Unkown => {
                     print_err("invalid syntax");
                     None
                 }
-                Token::Eof => {
-                    return None;
-                }
-                Token::Ident(_) => self.assign(start),
                 _ => {
                     let expr = self.expr(start)?;
-                    let stmt = Stmt::ExprStmt { expr };
+                    let stmt = Stmt::Expr { expr };
                     Some(Box::new(stmt))
                 }
             };
@@ -256,12 +248,11 @@ mod parser {
         fn assign(&mut self, start: Token) -> Option<Box<Stmt>> {
             if !self.check(Token::Eq) {
                 let expr = self.expr(start)?;
-                return Some(Box::new(Stmt::ExprStmt { expr }));
+                return Some(Box::new(Stmt::Expr { expr }));
             }
             self.eat();
 
-            let expr_start = self.next.take().unwrap();
-            self.eat();
+            let expr_start = self.next().unwrap();
 
             let name = if let Token::Ident(name) = start {
                 name
@@ -271,14 +262,13 @@ mod parser {
             };
 
             let expr = self.expr(expr_start)?;
-            Some(Box::new(Stmt::AssignStmt { name, expr }))
+            Some(Box::new(Stmt::Assign { name, expr }))
         }
 
         fn fun(&mut self) -> Option<Box<Stmt>> {
-            self.count = 0;
+            let mut count = 0;
 
-            let name = if let Some(Token::Ident(name)) = self.next.take() {
-                self.eat();
+            let name = if let Some(Token::Ident(name)) = self.next() {
                 name
             } else {
                 return None;
@@ -295,8 +285,8 @@ mod parser {
                 } else {
                     return None;
                 };
-                self.args.insert(name, self.count);
-                self.count += 1;
+                self.args.insert(name, count);
+                count += 1;
             }
 
             if !self.expect(Token::RightParen, "expect ')'") {
@@ -307,11 +297,13 @@ mod parser {
                 return None;
             }
 
-            let start = self.next.take()?;
-            self.eat();
+            let start = self.next()?;
 
             let body = self.expr(start)?;
-            let stmt = Stmt::FunStmt { name, body };
+            let stmt = Stmt::Fun { name, body };
+
+            // dont forget clear the args!
+            self.args.clear();
             Some(Box::new(stmt))
         }
 
@@ -323,14 +315,12 @@ mod parser {
             let mut left = self.mult_div(start)?;
 
             while self.check(Token::Plus) || self.check(Token::Minus) {
-                let op = match self.next.take()? {
-                    Token::Plus => Binaryop::Plus,
-                    Token::Minus => Binaryop::Sub,
-                    _ => Binaryop::Plus, // impassiable
+                let op = match self.next()? {
+                    Token::Plus => BinaryOp::Plus,
+                    Token::Minus => BinaryOp::Sub,
+                    _ => BinaryOp::Plus, // impassiable
                 };
-                self.eat();
-                let start = self.next.take()?;
-                self.eat();
+                let start = self.next()?;
                 let right = self.mult_div(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -342,14 +332,12 @@ mod parser {
             let mut left = self.square(start)?;
 
             while self.check(Token::Star) || self.check(Token::Slash) {
-                let op = match self.next.take()? {
-                    Token::Star => Binaryop::Mult,
-                    Token::Slash => Binaryop::Div,
-                    _ => Binaryop::Mult, // impassiable
+                let op = match self.next().unwrap() {
+                    Token::Star => BinaryOp::Mult,
+                    Token::Slash => BinaryOp::Div,
+                    _ => BinaryOp::Mult, // impassiable
                 };
-                self.eat();
-                let start = self.next.take()?;
-                self.eat();
+                let start = self.next()?;
                 let right = self.square(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -361,10 +349,9 @@ mod parser {
             let mut left = self.minus(start)?;
 
             while self.check(Token::Square) {
-                let op = Binaryop::Square;
                 self.eat();
-                let start = self.next.take()?;
-                self.eat();
+                let op = BinaryOp::Square;
+                let start = self.next()?;
                 let right = self.minus(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -374,9 +361,8 @@ mod parser {
 
         fn minus(&mut self, start: Token) -> Option<Box<Expr>> {
             if let Token::Minus = start {
-                let op = Unaryop::Sub;
-                let start = self.next.take()?;
-                self.eat();
+                let op = UnaryOp::Minus;
+                let start = self.next()?;
                 let operand = self.minus(start)?;
                 return Some(Box::new(Expr::Unary { op, operand }));
             }
@@ -388,7 +374,7 @@ mod parser {
             let mut operand = self.call(start)?;
 
             if self.check(Token::Bang) {
-                let op = Unaryop::Ftl;
+                let op = UnaryOp::Ftl;
                 self.eat();
                 operand = Box::new(Expr::Unary { op, operand });
             }
@@ -397,18 +383,17 @@ mod parser {
 
         fn call(&mut self, start: Token) -> Option<Box<Expr>> {
             if let (Token::Ident(_), Some(Token::LeftParen)) = (&start, &self.next) {
-                let mut values = Vec::new();
                 let name = if let Token::Ident(name) = start {
                     name
                 } else {
                     return None;
                 };
-
                 self.eat();
 
+                let mut values = Vec::new();
+
                 while let Some(Token::Number(_)) = &self.next {
-                    let num = if let Some(Token::Number(num)) = self.next.take() {
-                        self.eat();
+                    let num = if let Some(Token::Number(num)) = self.next() {
                         num
                     } else {
                         return None;
@@ -420,7 +405,10 @@ mod parser {
                     return None;
                 }
 
-                return Some(Box::new(Expr::Fun { name, values }));
+                return Some(Box::new(Expr::Fun {
+                    name,
+                    locals: values,
+                }));
             }
 
             self.primary(start)
@@ -440,11 +428,10 @@ mod parser {
                     }
                 }
                 Token::Number(num) => Some(Box::new(Expr::Literal {
-                    value: Valuable::Float(num),
+                    value: Valuable::Value(num),
                 })),
                 Token::LeftParen => {
-                    let start = self.next.take()?;
-                    self.eat();
+                    let start = self.next()?;
                     let v = self.expr(start)?;
                     if !self.expect(Token::RightParen, "expect ')'") {
                         return None;
@@ -456,6 +443,12 @@ mod parser {
                     None
                 }
             }
+        }
+
+        fn next(&mut self) -> Option<Token> {
+            let next = self.next.take();
+            self.eat();
+            next
         }
 
         fn eat(&mut self) {
@@ -479,7 +472,7 @@ mod parser {
                 return true;
             }
 
-            utils::print_err(err);
+            print_err(err);
             false
         }
     }
@@ -489,10 +482,10 @@ pub mod calculator {
     use std::collections::HashMap;
 
     use crate::{
-        ast::{Binaryop, Expr, Stmt, Unaryop, Valuable},
+        ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable},
         lexer::Scanner,
         parser::Parser,
-        utils,
+        utils::{self, print_err},
     };
 
     pub struct Env {
@@ -513,7 +506,7 @@ pub mod calculator {
             let builtin = HashMap::from([
                 ("ln", Box::new(f64::ln) as Box<_>),
                 ("lg", Box::new(f64::log10) as Box<_>),
-                ("exp", Box::new(f64::exp) as Box<_>)
+                ("exp", Box::new(f64::exp) as Box<_>),
             ]);
 
             let global = HashMap::from([
@@ -538,12 +531,12 @@ pub mod calculator {
 
         fn run_impl(&mut self, stmt: Box<Stmt>) -> Option<f64> {
             match *stmt {
-                Stmt::FunStmt { name, body } => {
+                Stmt::Fun { name, body } => {
                     self.functions.insert(name, body);
                     None
                 }
-                Stmt::ExprStmt { expr } => expr.value(self),
-                Stmt::AssignStmt { name, expr } => {
+                Stmt::Expr { expr } => expr.value(self),
+                Stmt::Assign { name, expr } => {
                     let value = expr.value(self)?;
                     self.global.insert(name, value);
                     None
@@ -559,7 +552,7 @@ pub mod calculator {
     impl Value for Valuable {
         fn value(&self, env: &mut Env) -> Option<f64> {
             match self {
-                Self::Float(v) => Some(*v),
+                Self::Value(v) => Some(*v),
                 Self::Arg(i) => env.locals.get(*i).copied(),
                 Self::Var(name) => env.global.get(name).copied(),
             }
@@ -574,15 +567,18 @@ pub mod calculator {
                     let lv = left.value(env)?;
                     let rv = right.value(env)?;
                     let result = match op {
-                        Binaryop::Plus => lv + rv,
-                        Binaryop::Sub => lv - rv,
-                        Binaryop::Mult => lv * rv,
-                        Binaryop::Div => lv / rv,
-                        Binaryop::Square => lv.powf(rv),
+                        BinaryOp::Plus => lv + rv,
+                        BinaryOp::Sub => lv - rv,
+                        BinaryOp::Mult => lv * rv,
+                        BinaryOp::Div => lv / rv,
+                        BinaryOp::Square => lv.powf(rv),
                     };
                     Some(result)
                 }
-                Expr::Fun { name, values } => {
+                Expr::Fun {
+                    name,
+                    locals: values,
+                } => {
                     env.locals.clear();
                     for v in values {
                         env.locals.push(*v);
@@ -594,14 +590,15 @@ pub mod calculator {
                     } else if let Some(f) = env.builtin.get(name.as_str()) {
                         Some(f(values[0]))
                     } else {
+                        print_err("function is not defined");
                         None
                     }
                 }
                 Expr::Unary { op, operand } => {
                     let value = operand.value(env)?;
                     let result = match op {
-                        Unaryop::Sub => -value,
-                        Unaryop::Ftl => utils::factorial(value as u32),
+                        UnaryOp::Minus => -value,
+                        UnaryOp::Ftl => utils::factorial(value as u32),
                     };
                     Some(result)
                 }

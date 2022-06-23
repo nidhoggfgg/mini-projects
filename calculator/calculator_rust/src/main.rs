@@ -5,10 +5,19 @@ use calculator_rust::calculator::Env;
 fn main() {
     let mut env = Env::new();
     loop {
+        // prompt
         print!(">>> ");
         io::stdout().flush().expect("flush error");
+
         let mut line = String::with_capacity(8);
-        io::stdin().read_line(&mut line).expect("fail to readline!");
+        io::stdin().read_line(&mut line).expect("fail to input");
+
+        // exit
+        if line == "exit\n" {
+            break;
+        }
+
+        // run
         if let Some(v) = env.run(&line) {
             println!("{}", v);
         }
