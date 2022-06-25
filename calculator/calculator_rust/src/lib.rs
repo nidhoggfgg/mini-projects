@@ -3,7 +3,7 @@ mod lexer {
 
     use crate::utils;
 
-    #[derive(Clone, PartialEq, Debug)]
+    #[derive(Clone, Debug)]
     pub enum Token {
         LeftParen,
         RightParen,
@@ -177,13 +177,13 @@ mod ast {
         },
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub enum UnaryOp {
         Minus,
         Ftl,
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub enum BinaryOp {
         Plus,
         Sub,
@@ -195,6 +195,7 @@ mod ast {
 
 mod parser {
     use std::collections::HashMap;
+    use std::mem::discriminant;
 
     use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable};
     use crate::lexer::Token;
@@ -228,7 +229,7 @@ mod parser {
                     return None;
                 }
                 Token::Unkown => {
-                    print_err("invalid syntax");
+                    print_err!("invalid char");
                     None
                 }
                 _ => {
@@ -238,7 +239,8 @@ mod parser {
                 }
             };
 
-            if !self.expect(Token::Eof, "invalid syntax!") {
+            if !self.expect(Token::Eof) {
+                print_err!("invalid syntax");
                 return None;
             }
 
@@ -252,52 +254,76 @@ mod parser {
             }
             self.eat();
 
+            if self.is_at_end() {
+                return None;
+            }
+
             let expr_start = self.next().unwrap();
+            let expr = self.expr(expr_start)?;
 
             let name = if let Token::Ident(name) = start {
                 name
             } else {
-                print_err("error");
+                print_err!("expect a name but get {:?}, this is a bug!", start);
                 return None;
             };
 
-            let expr = self.expr(expr_start)?;
             Some(Box::new(Stmt::Assign { name, expr }))
         }
 
         fn fun(&mut self) -> Option<Box<Stmt>> {
-            let mut count = 0;
+            if self.is_at_end() {
+                print_err!("expect a name after 'fun'");
+                return None;
+            }
 
             let name = if let Some(Token::Ident(name)) = self.next() {
                 name
             } else {
+                print_err!("expect a name after 'fun'");
                 return None;
             };
 
-            if !self.expect(Token::LeftParen, "expect '('") {
+            if !self.expect(Token::LeftParen) {
+                print_err!("expect '(' after '{}'", name);
                 return None;
             }
 
-            while let Some(Token::Ident(_)) = &self.next {
+            let mut count = 0;
+            while self.check(Token::Ident("".into())) {
                 let name = if let Some(Token::Ident(name)) = self.next.take() {
                     self.eat();
                     name
                 } else {
+                    print_err!("expect a name, this is a bug!");
                     return None;
                 };
+
+                if count == usize::MAX {
+                    print_err!("to many args");
+                    return None;
+                }
+
                 self.args.insert(name, count);
                 count += 1;
             }
 
-            if !self.expect(Token::RightParen, "expect ')'") {
+            if !self.expect(Token::RightParen) {
+                print_err!("missing ')'");
                 return None;
             }
 
-            if !self.expect(Token::Eq, "expect '='") {
+            if !self.expect(Token::Eq) {
+                print_err!("expect '='");
                 return None;
             }
 
-            let start = self.next()?;
+            if self.is_at_end() {
+                print_err!("expect a expression after '='");
+                return None;
+            }
+
+            let start = self.next().unwrap();
 
             let body = self.expr(start)?;
             let stmt = Stmt::Fun { name, body };
@@ -315,12 +341,18 @@ mod parser {
             let mut left = self.mult_div(start)?;
 
             while self.check(Token::Plus) || self.check(Token::Minus) {
-                let op = match self.next()? {
+                let op = match self.next().unwrap() {
                     Token::Plus => BinaryOp::Plus,
                     Token::Minus => BinaryOp::Sub,
                     _ => BinaryOp::Plus, // impassiable
                 };
-                let start = self.next()?;
+
+                if self.is_at_end() {
+                    print_err!("expect a expression after '+' or '-'");
+                    return None;
+                }
+
+                let start = self.next().unwrap();
                 let right = self.mult_div(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -337,7 +369,13 @@ mod parser {
                     Token::Slash => BinaryOp::Div,
                     _ => BinaryOp::Mult, // impassiable
                 };
-                let start = self.next()?;
+
+                if self.is_at_end() {
+                    print_err!("expect a expression after '*' or '/'");
+                    return None;
+                }
+
+                let start = self.next().unwrap();
                 let right = self.square(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -351,7 +389,13 @@ mod parser {
             while self.check(Token::Square) {
                 self.eat();
                 let op = BinaryOp::Square;
-                let start = self.next()?;
+
+                if self.is_at_end() {
+                    print_err!("expect a expression after '^'");
+                    return None;
+                }
+
+                let start = self.next().unwrap();
                 let right = self.minus(start)?;
                 left = Box::new(Expr::Binary { left, op, right })
             }
@@ -362,7 +406,13 @@ mod parser {
         fn minus(&mut self, start: Token) -> Option<Box<Expr>> {
             if let Token::Minus = start {
                 let op = UnaryOp::Minus;
-                let start = self.next()?;
+
+                if self.is_at_end() {
+                    print_err!("expect a expression after '-'");
+                    return None;
+                }
+
+                let start = self.next().unwrap();
                 let operand = self.minus(start)?;
                 return Some(Box::new(Expr::Unary { op, operand }));
             }
@@ -386,6 +436,7 @@ mod parser {
                 let name = if let Token::Ident(name) = start {
                     name
                 } else {
+                    print_err!("expect a name to call a function");
                     return None;
                 };
                 self.eat();
@@ -396,12 +447,14 @@ mod parser {
                     let num = if let Some(Token::Number(num)) = self.next() {
                         num
                     } else {
+                        print_err!("expect number in function call");
                         return None;
                     };
                     values.push(num);
                 }
 
-                if !self.expect(Token::RightParen, "expect ')'") {
+                if !self.expect(Token::RightParen) {
+                    print_err!("missing ')'");
                     return None;
                 }
 
@@ -433,13 +486,14 @@ mod parser {
                 Token::LeftParen => {
                     let start = self.next()?;
                     let v = self.expr(start)?;
-                    if !self.expect(Token::RightParen, "expect ')'") {
+                    if !self.expect(Token::RightParen) {
+                        print_err!("missing ')'");
                         return None;
                     }
                     Some(Box::new(Expr::Group { body: v }))
                 }
                 _ => {
-                    print_err("invalid syntax");
+                    print_err!("invalid syntax");
                     None
                 }
             }
@@ -455,9 +509,9 @@ mod parser {
             self.next = self.tokens.next();
         }
 
-        fn check(&mut self, token: Token) -> bool {
+        fn check(&self, token: Token) -> bool {
             if let Some(t) = &self.next {
-                if *t == token {
+                if discriminant(t) == discriminant(&token) {
                     return true;
                 }
                 false
@@ -466,13 +520,16 @@ mod parser {
             }
         }
 
-        fn expect(&mut self, token: Token, err: &str) -> bool {
+        fn is_at_end(&self) -> bool {
+            self.check(Token::Eof)
+        }
+
+        fn expect(&mut self, token: Token) -> bool {
             if self.check(token) {
                 self.eat();
                 return true;
             }
 
-            print_err(err);
             false
         }
     }
@@ -526,11 +583,11 @@ pub mod calculator {
             let tokens = lexer.scan();
             let mut parser = Parser::new(tokens.into_iter());
             let ast = parser.parse()?;
-            self.run_impl(ast)
+            self.run_impl(*ast)
         }
 
-        fn run_impl(&mut self, stmt: Box<Stmt>) -> Option<f64> {
-            match *stmt {
+        fn run_impl(&mut self, stmt: Stmt) -> Option<f64> {
+            match stmt {
                 Stmt::Fun { name, body } => {
                     self.functions.insert(name, body);
                     None
@@ -553,8 +610,18 @@ pub mod calculator {
         fn value(&self, env: &mut Env) -> Option<f64> {
             match self {
                 Self::Value(v) => Some(*v),
-                Self::Arg(i) => env.locals.get(*i).copied(),
-                Self::Var(name) => env.global.get(name).copied(),
+                Self::Arg(i) => if let Some(v) = env.locals.get(*i) {
+                    Some(v).copied()
+                } else {
+                    print_err!("too little values give");
+                    None
+                },
+                Self::Var(name) => if let Some(v) = env.global.get(name) {
+                    Some(v).copied()
+                } else {
+                    print_err!("can't find variable named '{}'", name);
+                    None
+                },
             }
         }
     }
@@ -590,7 +657,7 @@ pub mod calculator {
                     } else if let Some(f) = env.builtin.get(name.as_str()) {
                         Some(f(values[0]))
                     } else {
-                        print_err("function is not defined");
+                        utils::print_err!("function is not defined");
                         None
                     }
                 }
@@ -617,9 +684,13 @@ mod utils {
         ('0'..='9').contains(&c)
     }
 
-    pub fn print_err(err: &str) {
-        println!("{}", err);
+    macro_rules! print_err {
+        ($($arg:tt)*) => {
+            println!("{}", format_args!($($arg)*));
+        };
     }
+
+    pub(crate) use print_err;
 
     pub fn factorial(num: u32) -> f64 {
         let mut result: u32 = 1;
