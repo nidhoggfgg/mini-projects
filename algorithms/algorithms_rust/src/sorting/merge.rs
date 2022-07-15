@@ -23,21 +23,43 @@ fn merge<T: PartialOrd + Copy>(array: &mut [T], mid: usize) {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::prelude::*;
 
     #[test]
-    fn random() {
-        let mut rng = thread_rng();
-        let mut random_vec: Vec<u32> = (1..100).collect();
-        random_vec.shuffle(&mut rng);
-        let mut random_vec_copy = random_vec.clone();
+    fn empty() {
+        let mut array = Vec::<char>::new();
+        merge_sort(&mut array);
+        assert_eq!(array, vec![]);
+    }
 
-        merge_sort(&mut random_vec);
-        random_vec_copy.sort();
+    #[test]
+    fn one() {
+        let mut array = vec![1];
+        merge_sort(&mut array);
+        assert_eq!(array, vec![1]);
+    }
 
-        assert_eq!(random_vec, random_vec_copy);
+    #[test]
+    fn double() {
+        let mut array = vec![4.5, 1.2, 3.4, 5.6];
+        merge_sort(&mut array);
+        assert_eq!(array, vec![1.2, 3.4, 4.5, 5.6]);
+    }
+
+    #[test]
+    fn integer() {
+        let mut array = vec![1, 4, 5, 9, 2, 6];
+        merge_sort(&mut array);
+        assert_eq!(array, vec![1, 2, 4, 5, 6, 9]);
+    }
+
+    #[test]
+    fn range() {
+        let mut array: Vec<u32> = (0..1000).rev().collect();
+        merge_sort(&mut array);
+        assert_eq!(array, (0..1000).collect::<Vec<u32>>());
     }
 }
