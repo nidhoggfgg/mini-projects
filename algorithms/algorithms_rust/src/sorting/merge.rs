@@ -23,7 +23,6 @@ fn merge<T: PartialOrd + Copy>(array: &mut [T], mid: usize) {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
