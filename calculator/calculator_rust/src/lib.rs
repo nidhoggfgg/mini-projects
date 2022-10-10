@@ -10,7 +10,7 @@ pub mod calculator {
         ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable},
         lexer::Scanner,
         parser::Parser,
-        utils::{self, hash_it, print_err},
+        utils::{factorial, hash_it, print_err},
     };
 
     pub struct Env {
@@ -31,7 +31,18 @@ pub mod calculator {
             let builtin = HashMap::from([
                 (hash_it("ln"), Box::new(f64::ln) as Box<_>),
                 (hash_it("lg"), Box::new(f64::log10) as Box<_>),
-                (hash_it("exp"), Box::new(f64::exp) as Box<_>),
+                (hash_it("sin"), Box::new(f64::sin) as Box<_>),
+                (hash_it("cos"), Box::new(f64::cos) as Box<_>),
+                (hash_it("tan"), Box::new(f64::tan) as Box<_>),
+                (hash_it("acos"), Box::new(f64::acos) as Box<_>),
+                (hash_it("asin"), Box::new(f64::asin) as Box<_>),
+                (hash_it("atan"), Box::new(f64::atan) as Box<_>),
+                (hash_it("sqrt"), Box::new(f64::sqrt) as Box<_>),
+                (hash_it("abs"), Box::new(f64::abs) as Box<_>),
+                (hash_it("sinh"), Box::new(f64::sinh) as Box<_>),
+                (hash_it("cosh"), Box::new(f64::cosh) as Box<_>),
+                (hash_it("cosh"), Box::new(f64::cosh) as Box<_>),
+                (hash_it("floor"), Box::new(f64::floor) as Box<_>),
             ]);
 
             let global = HashMap::from([
@@ -114,12 +125,9 @@ pub mod calculator {
                     };
                     Some(result)
                 }
-                Expr::Fun {
-                    idx,
-                    locals: values,
-                } => {
+                Expr::Fun { idx, args } => {
                     env.locals.clear();
-                    for v in values {
+                    for v in args {
                         env.locals.push(*v);
                     }
                     if let Some((name, body)) = env.functions.remove_entry(idx) {
@@ -127,9 +135,13 @@ pub mod calculator {
                         env.functions.insert(name, body);
                         result
                     } else if let Some(f) = env.builtin.get(idx) {
-                        Some(f(values[0]))
+                        if args.len() != 1 {
+                            print_err!("need and only need 1 argument");
+                            return None;
+                        }
+                        Some(f(args[0]))
                     } else {
-                        utils::print_err!("function is not defined");
+                        print_err!("function is not defined");
                         None
                     }
                 }
@@ -137,7 +149,7 @@ pub mod calculator {
                     let value = operand.value(env)?;
                     let result = match op {
                         UnaryOp::Minus => -value,
-                        UnaryOp::Ftl => utils::factorial(value as u32),
+                        UnaryOp::Ftl => factorial(value as u32),
                     };
                     Some(result)
                 }

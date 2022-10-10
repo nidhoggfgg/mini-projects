@@ -262,10 +262,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 return None;
             }
 
-            return Some(Box::new(Expr::Fun {
-                idx,
-                locals: values,
-            }));
+            return Some(Box::new(Expr::Fun { idx, args: values }));
         }
 
         self.primary(start)
