@@ -8,7 +8,7 @@ use crate::utils::print_err;
 pub struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
     next: Option<Token>,
-    args: HashMap<String, usize>,
+    args: HashMap<u64, usize>,
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
@@ -65,14 +65,14 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         let expr_start = self.next().unwrap();
         let expr = self.expr(expr_start)?;
 
-        let name = if let Token::Ident(name) = start {
-            name
+        let idx = if let Token::Ident(idx) = start {
+            idx
         } else {
             print_err!("expect a name but get {:?}, this is a bug!", start);
             return None;
         };
 
-        Some(Box::new(Stmt::Assign { name, expr }))
+        Some(Box::new(Stmt::Assign { idx, expr }))
     }
 
     fn fun(&mut self) -> Option<Box<Stmt>> {
@@ -81,23 +81,23 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             return None;
         }
 
-        let name = if let Some(Token::Ident(name)) = self.next() {
-            name
+        let idx = if let Some(Token::Ident(idx)) = self.next() {
+            idx
         } else {
             print_err!("expect a name after 'fun'");
             return None;
         };
 
         if !self.expect(Token::LeftParen) {
-            print_err!("expect '(' after '{}'", name);
+            print_err!("expect '(' after '{}'", idx);
             return None;
         }
 
         let mut count = 0;
-        while self.check(Token::Ident("".into())) {
-            let name = if let Some(Token::Ident(name)) = self.next.take() {
+        while self.check(Token::Ident(0)) {
+            let idx = if let Some(Token::Ident(idx)) = self.next.take() {
                 self.eat();
-                name
+                idx
             } else {
                 print_err!("expect a name, this is a bug!");
                 return None;
@@ -108,7 +108,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 return None;
             }
 
-            self.args.insert(name, count);
+            self.args.insert(idx, count);
             count += 1;
         }
 
@@ -130,7 +130,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         let start = self.next().unwrap();
 
         let body = self.expr(start)?;
-        let stmt = Stmt::Fun { name, body };
+        let stmt = Stmt::Fun { idx, body };
 
         // dont forget clear the args!
         self.args.clear();
@@ -237,8 +237,8 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
     fn call(&mut self, start: Token) -> Option<Box<Expr>> {
         if let (Token::Ident(_), Some(Token::LeftParen)) = (&start, &self.next) {
-            let name = if let Token::Ident(name) = start {
-                name
+            let idx = if let Token::Ident(idx) = start {
+                idx
             } else {
                 print_err!("expect a name to call a function");
                 return None;
@@ -263,7 +263,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             }
 
             return Some(Box::new(Expr::Fun {
-                name,
+                idx,
                 locals: values,
             }));
         }
@@ -273,14 +273,14 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
     fn primary(&mut self, start: Token) -> Option<Box<Expr>> {
         match start {
-            Token::Ident(name) => {
-                if let Some(i) = self.args.get(&name) {
+            Token::Ident(idx) => {
+                if let Some(i) = self.args.get(&idx) {
                     Some(Box::new(Expr::Literal {
                         value: Valuable::Arg(*i),
                     }))
                 } else {
                     Some(Box::new(Expr::Literal {
-                        value: Valuable::Var(name),
+                        value: Valuable::Var(idx),
                     }))
                 }
             }

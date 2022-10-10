@@ -10,14 +10,14 @@ pub mod calculator {
         ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable},
         lexer::Scanner,
         parser::Parser,
-        utils::{self, print_err},
+        utils::{self, hash_it, print_err},
     };
 
     pub struct Env {
-        functions: HashMap<String, Box<Expr>>,
+        functions: HashMap<u64, Box<Expr>>,
         locals: Vec<f64>,
-        builtin: HashMap<&'static str, Box<dyn Fn(f64) -> f64>>,
-        global: HashMap<String, f64>,
+        builtin: HashMap<u64, Box<dyn Fn(f64) -> f64>>,
+        global: HashMap<u64, f64>,
     }
 
     impl Default for Env {
@@ -29,14 +29,14 @@ pub mod calculator {
     impl Env {
         pub fn new() -> Self {
             let builtin = HashMap::from([
-                ("ln", Box::new(f64::ln) as Box<_>),
-                ("lg", Box::new(f64::log10) as Box<_>),
-                ("exp", Box::new(f64::exp) as Box<_>),
+                (hash_it("ln"), Box::new(f64::ln) as Box<_>),
+                (hash_it("lg"), Box::new(f64::log10) as Box<_>),
+                (hash_it("exp"), Box::new(f64::exp) as Box<_>),
             ]);
 
             let global = HashMap::from([
-                ("PI".into(), std::f64::consts::PI),
-                ("E".into(), std::f64::consts::E),
+                (hash_it("PI"), std::f64::consts::PI),
+                (hash_it("E"), std::f64::consts::E),
             ]);
             Env {
                 functions: HashMap::new(),
@@ -56,14 +56,14 @@ pub mod calculator {
 
         fn run_impl(&mut self, stmt: Stmt) -> Option<f64> {
             match stmt {
-                Stmt::Fun { name, body } => {
-                    self.functions.insert(name, body);
+                Stmt::Fun { idx, body } => {
+                    self.functions.insert(idx, body);
                     None
                 }
                 Stmt::Expr { expr } => expr.value(self),
-                Stmt::Assign { name, expr } => {
+                Stmt::Assign { idx, expr } => {
                     let value = expr.value(self)?;
-                    self.global.insert(name, value);
+                    self.global.insert(idx, value);
                     None
                 }
             }
@@ -115,18 +115,18 @@ pub mod calculator {
                     Some(result)
                 }
                 Expr::Fun {
-                    name,
+                    idx,
                     locals: values,
                 } => {
                     env.locals.clear();
                     for v in values {
                         env.locals.push(*v);
                     }
-                    if let Some((name, body)) = env.functions.remove_entry(name) {
+                    if let Some((name, body)) = env.functions.remove_entry(idx) {
                         let result = body.value(env);
                         env.functions.insert(name, body);
                         result
-                    } else if let Some(f) = env.builtin.get(name.as_str()) {
+                    } else if let Some(f) = env.builtin.get(idx) {
                         Some(f(values[0]))
                     } else {
                         utils::print_err!("function is not defined");

@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub enum Stmt {
-    Fun { name: String, body: Box<Expr> },
-    Assign { name: String, expr: Box<Expr> },
+    Fun { idx: u64, body: Box<Expr> },
+    Assign { idx: u64, expr: Box<Expr> },
     Expr { expr: Box<Expr> },
 }
 
@@ -9,7 +9,7 @@ pub enum Stmt {
 pub enum Valuable {
     Value(f64),
     Arg(usize),
-    Var(String),
+    Var(u64),
 }
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Fun {
-        name: String,
+        idx: u64,
         locals: Vec<f64>,
     },
 }

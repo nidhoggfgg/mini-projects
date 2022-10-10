@@ -15,7 +15,7 @@ pub enum Token {
     Eq,
     Fun,
     Number(f64),
-    Ident(String),
+    Ident(u64),
     Unknown,
     Eof,
 }
@@ -90,7 +90,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             return kw.clone();
         }
 
-        Token::Ident(lexeme)
+        Token::Ident(utils::hash_it(lexeme))
     }
 
     fn number(&mut self, start: char) -> Token {
