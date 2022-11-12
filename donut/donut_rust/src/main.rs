@@ -1,9 +1,12 @@
 fn main() {
     let scale = 1.0;
+    let sample_theta = 2.0_f64.powf(7.0);
+    let sample_phi = 2.0_f64.powf(7.0);
+    let light_adv = true;
 
     const PI: f64 = std::f64::consts::PI;
-    let theta_step = PI / 2.0_f64.powf(7.0);
-    let phi_step = PI / 2.0_f64.powf(7.0);
+    let theta_step = PI / sample_theta;
+    let phi_step = PI / sample_phi;
     let swidth = (60.0 * scale) as usize;
     let sheight = (26.0 * scale) as usize;
     let r1 = 1.0;
@@ -14,7 +17,12 @@ fn main() {
     let mut lighted = Vec::with_capacity(12);
     for i in 0..=11 {
         let c = ".,-~:;=!*#$@".chars().nth(i).unwrap();
-        lighted.push(format!("\x1B[38;5;{}m{}", 233 + 2 * i, c));
+        let s = if light_adv {
+            format!("\x1B[38;5;{}m{}", 233 + 2 * i, c)
+        } else {
+            format!("{}", c)
+        };
+        lighted.push(s);
     }
 
     let (mut a, mut b) = (0.0_f64, 0.0_f64);
@@ -44,12 +52,11 @@ fn main() {
                     ((sheight / 2) as f64 + k1 / 2.0 * zd * y) as usize,
                 );
 
-                let n = 11.0
+                let n = 8.0
                     * ((sint * sina - sinp * cost * cosa) * cosb
                         - sinp * cost * sina
                         - sint * cosa
-                        - cosp * cost * sinb)
-                    / 2.0_f64.sqrt();
+                        - cosp * cost * sinb);
                 let o = swidth * y + x;
                 if y < sheight && x < swidth && zd > zbuffer[o] {
                     zbuffer[o] = zd;
@@ -60,7 +67,8 @@ fn main() {
             phi += theta_step;
         }
 
-        // print whole graph
+        print!("\x1B[?25l"); // hide the cursor
+                             // print whole graph
         println!(
             "\x1B[H{}",
             output
@@ -69,11 +77,14 @@ fn main() {
                 .collect::<Vec<String>>()
                 .join("\n")
         );
+        println!("\x1B[?25h"); // show the cursor
 
         // prepare for the next loop
         std::thread::sleep(std::time::Duration::from_millis(64));
         output.fill(" ");
         zbuffer.fill(0.0);
+
+        // rotation of whole graph
         a += 1.0 / 2.0_f64.powf(6.0) * PI;
         b += 1.0 / 2.0_f64.powf(7.0) * PI;
     }
