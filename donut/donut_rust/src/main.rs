@@ -1,8 +1,11 @@
 fn main() {
+    // === config ===
     let scale = 1.0;
     let sample_theta = 2.0_f64.powf(7.0);
     let sample_phi = 2.0_f64.powf(7.0);
     let light_adv = true;
+    let sleep_time = 64;
+    // === config ===
 
     const PI: f64 = std::f64::consts::PI;
     let theta_step = PI / sample_theta;
@@ -29,6 +32,7 @@ fn main() {
 
     let (mut output, mut zbuffer) = (vec![" "; swidth * sheight], vec![0.0; swidth * sheight]);
 
+    // clear screen
     println!("\x1B[2J");
     loop {
         let (sina, cosa) = a.sin_cos();
@@ -37,26 +41,42 @@ fn main() {
         let mut phi = 0.0;
         while phi < 2.0 * PI {
             let (sinp, cosp) = phi.sin_cos();
+
             let mut theta = 0.0;
             while theta < 2.0 * PI {
                 let (sint, cost) = theta.sin_cos();
 
-                let (x1, y1) = (r1 * cost + r2, r1 * sint);
-                let (t1, t2) = (sinp * x1 * cosa - sint * sina, cosp * x1);
+                // this closure rotate a vector (ry -> rx -> rz), M(phi, a, b).
+                // see https://en.wikipedia.org/wiki/Rotation_matrix for more information.
+                // note: this closure dont use z, just because in this program z always 0.
+                let rotate_yxz = |xi, yi| {
+                    let t1 = xi * sina * sinp + yi * cosa;
+                    let t2 = xi * cosp;
+                    (
+                        t1 * sinb + t2 * cosb,
+                        t1 * cosb - t2 * sinb,
+                        xi * cosa * sinp - yi * sina,
+                    )
+                };
 
-                let x = t2 * cosb - t1 * sinb;
-                let y = t2 * sinb + t1 * cosb;
-                let zd = 1.0 / (sinp * x1 * sina + y1 * cosa + k2);
+                // first, make a point on a circle.
+                let (x1, y1) = (r1 * cost + r2, r1 * sint);
+
+                // second, rotate it to right position.
+                let (x, y, z) = rotate_yxz(x1, y1);
+                let zd = 1.0 / (z + k2);
+
+                // third, map the point to the right place on monitor.
                 let (x, y) = (
                     ((swidth / 2) as f64 + k1 * zd * x) as usize,
-                    ((sheight / 2) as f64 + k1 / 2.0 * zd * y) as usize,
+                    ((sheight / 2) as f64 - k1 / 2.0 * zd * y) as usize,
                 );
 
-                let n = 8.0
-                    * ((sint * sina - sinp * cost * cosa) * cosb
-                        - sinp * cost * sina
-                        - sint * cosa
-                        - cosp * cost * sinb);
+                // calculating light, assuming that the light source is above.
+                // (cost, sint, 0) are the normal vectors of the circle.
+                let t = rotate_yxz(cost, sint);
+                let n = 8.0 * (t.1 - t.2);
+
                 let o = swidth * y + x;
                 if y < sheight && x < swidth && zd > zbuffer[o] {
                     zbuffer[o] = zd;
@@ -67,8 +87,7 @@ fn main() {
             phi += theta_step;
         }
 
-        print!("\x1B[?25l"); // hide the cursor
-                             // print whole graph
+        // print whole graph
         println!(
             "\x1B[H{}",
             output
@@ -77,14 +96,13 @@ fn main() {
                 .collect::<Vec<String>>()
                 .join("\n")
         );
-        println!("\x1B[?25h"); // show the cursor
 
         // prepare for the next loop
-        std::thread::sleep(std::time::Duration::from_millis(64));
+        std::thread::sleep(std::time::Duration::from_millis(sleep_time));
         output.fill(" ");
         zbuffer.fill(0.0);
 
-        // rotation of whole graph
+        // rotate whole graph
         a += 1.0 / 2.0_f64.powf(6.0) * PI;
         b += 1.0 / 2.0_f64.powf(7.0) * PI;
     }
