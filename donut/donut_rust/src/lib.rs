@@ -88,10 +88,45 @@ pub fn listen_term_change(old: (usize, usize)) -> Option<(usize, usize)> {
     Some(now)
 }
 
-pub fn gen_color_char(color: &mut (u8, u8, u8)) -> Vec<Colored> {
+pub fn gen_char_seq(color: &mut (u8, u8, u8), imp: Imp) -> Vec<Colored> {
+    match imp {
+        Imp::Color => gen_color_char(color),
+        Imp::Light => gen_light_char(),
+        Imp::None => gen_none_char(),
+    }
+}
+
+fn gen_none_char() -> Vec<Colored> {
+    let color = (128, 128, 128);
+    let mut colored = Vec::with_capacity(12);
+    let chars = ".,-~:;=!*#$@".chars();
+    for c in chars {
+        colored.push(Colored::new(color, c));
+    }
+    colored
+}
+
+fn gen_light_char() -> Vec<Colored> {
+    let color = (128, 128, 128);
+    let mut colored = Vec::with_capacity(12);
+    let lc = |c, l| (c as f64 * l) as u8;
+    let light_levels = [
+        0.50, 0.6, 0.7, 0.8, 0.9, 1.00, 1.00, 1.1, 1.2, 1.3, 1.4, 1.5,
+    ];
+    let chars = ".,-~:;=!*#$@".chars();
+    for (l, c) in std::iter::zip(light_levels, chars) {
+        colored.push(Colored::new(
+            (lc(color.0, l), lc(color.1, l), lc(color.1, l)),
+            c,
+        ))
+    }
+    colored
+}
+
+fn gen_color_char(color: &mut (u8, u8, u8)) -> Vec<Colored> {
     let mut rng = rand::thread_rng();
 
-    // random add of minus, this will make the color more randomly
+    // random add or minus, this will make the color more randomly
     let mut add_or_min = |a| {
         if a >= 240 {
             a - rng.gen_range(0..=16)
@@ -120,25 +155,27 @@ pub fn gen_color_char(color: &mut (u8, u8, u8)) -> Vec<Colored> {
     colored
 }
 
-// the constant 1.8, 2.0 and 5.4 is just what i think is appropriate not the best.
+pub fn init_matrix(w: usize, h: usize) -> (Vec<Colored>, Vec<f64>) {
+    (
+        vec![Colored::default(); w * h], // output
+        vec![0.0; w * h],                // zbuffer
+    )
+}
+
+// the constant 1.8, 2.0 and 6.0 is just what i think is appropriate not the best.
 // but the performance of the terminal output has reached its limit,
 // and optimizing these constants will not improve the fps. :)
 // if the sample is small, render will be really fast and the dot will be very few.
 #[macro_export]
 macro_rules! init_param {
     ($w: expr, $h: expr) => {
-        init_param!($w, $h, $h as f64 * 2.0, $h as f64 * 5.4)
+        ($w as f64 / 1.8, $h as f64 * 2.0, $h as f64 * 6.0)
     };
-    ($w: expr, $h: expr, $sample_theta: expr, $sample_phi: expr) => {
-        init_param!($w, $h, $w as f64 / 1.8, $sample_theta, $sample_phi)
-    };
-    ($w: expr, $h: expr, $k1: expr, $sample_theta: expr, $sample_phi: expr) => {
+    ($w: expr, $h: expr, $ow: expr, $sample: expr) => {
         (
-            $k1,                               // k1
-            $sample_theta,                     // sample_theta
-            $sample_phi,                       // sample_phi
-            vec![Colored::default(); $w * $h], // output
-            vec![0.0; $w * $h],                // zbuffer
+            $w as f64 / 1.8,
+            $sample.0 * $w as f64 / $ow as f64,
+            $sample.1 * $w as f64 / $ow as f64,
         )
     };
 }
@@ -169,4 +206,11 @@ impl Default for Colored {
             ch: ' ',
         }
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Imp {
+    Color,
+    Light,
+    None,
 }

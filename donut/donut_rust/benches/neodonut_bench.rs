@@ -4,17 +4,19 @@ extern crate test;
 
 #[cfg(test)]
 mod benches {
-    use donut_rust::{gen_color_char, init_param, render_frame, Colored, PI};
+    use donut_rust::{gen_char_seq, init_matrix, init_param, render_frame, Colored, Imp, PI};
     use test::Bencher;
     const WIDTH: usize = 320;
     const HEIGHT: usize = 160;
+    const IMP: Imp = Imp::Color;
 
     #[bench]
     fn bench_neodonut(bencher: &mut Bencher) {
         let mut color = (128, 128, 128);
-        let colored = gen_color_char(&mut color);
+        let colored = gen_char_seq(&mut color, IMP);
 
-        let (k1, sample_theta, sample_phi, mut output, mut zbuffer) = init_param!(WIDTH, HEIGHT);
+        let (k1, sample_theta, sample_phi) = init_param!(WIDTH, HEIGHT);
+        let (mut output, mut zbuffer) = init_matrix(WIDTH, HEIGHT);
         let (mut a, mut b) = (0.0_f64, 0.0_f64);
         bencher.iter(|| {
             render_frame(
@@ -43,9 +45,10 @@ mod benches {
     #[bench]
     fn bench_neodonut_no_format(bencher: &mut Bencher) {
         let mut color = (128, 128, 128);
-        let colored = gen_color_char(&mut color);
+        let colored = gen_char_seq(&mut color, IMP);
 
-        let (k1, sample_theta, sample_phi, mut output, mut zbuffer) = init_param!(WIDTH, HEIGHT);
+        let (k1, sample_theta, sample_phi) = init_param!(WIDTH, HEIGHT);
+        let (mut output, mut zbuffer) = init_matrix(WIDTH, HEIGHT);
         let (mut a, mut b) = (0.0_f64, 0.0_f64);
         bencher.iter(|| {
             render_frame(
@@ -67,12 +70,12 @@ mod benches {
     #[bench]
     fn bench_neodonut_new_matrix(bencher: &mut Bencher) {
         let mut color = (128, 128, 128);
-        let colored = gen_color_char(&mut color);
+        let colored = gen_char_seq(&mut color, IMP);
 
         let (mut a, mut b) = (0.0_f64, 0.0_f64);
         bencher.iter(|| {
-            let (k1, sample_theta, sample_phi, mut output, mut zbuffer) =
-                init_param!(WIDTH, HEIGHT);
+            let (k1, sample_theta, sample_phi) = init_param!(WIDTH, HEIGHT);
+            let (mut output, mut zbuffer) = init_matrix(WIDTH, HEIGHT);
             render_frame(
                 (a, b),
                 k1,
