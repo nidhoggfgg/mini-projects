@@ -5,6 +5,12 @@
 some practical, mini and easy projects to help beginner used to writing code!
 all the projects is for study and practice not for product!
 
+## neodonut (Rust)
+
+a donut re-impl and enhanced version.
+a sample:
+![](./donut/donut_rust/imgs/default.gif)
+
 ## termgraph (Python, Rust)
 
 a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)

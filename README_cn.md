@@ -3,6 +3,11 @@
 一些小的，简单的，适合初学者练手的项目来帮助初学者学习编程！
 所有本仓库内的项目都是非常简单的(复杂的部分会简化掉)，同时还有很多很好玩的小玩意！
 
+## 甜甜圈 (Rust)
+
+这是一个甜甜圈的复刻版本，以及一个增强版本。
+![](./donut/donut_rust/imgs/default.gif)
+
 ## 终端中看股票 (Python, Rust)
 
 一个 [termgraph](https://github.com/sgeisler/termgraph.git) 的复刻版，但是简化过了(简化了代码，没有简化功能)。
