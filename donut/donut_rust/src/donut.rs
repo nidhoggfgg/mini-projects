@@ -1,109 +1,23 @@
-fn main() {
-    // === config ===
-    let scale = 1.0;
-    let sample_theta = 2.0_f64.powf(7.0);
-    let sample_phi = 2.0_f64.powf(7.0);
-    let light_adv = true;
-    let sleep_time = 64;
-    // === config ===
-
-    const PI: f64 = std::f64::consts::PI;
-    let theta_step = PI / sample_theta;
-    let phi_step = PI / sample_phi;
-    let swidth = (60.0 * scale) as usize;
-    let sheight = (26.0 * scale) as usize;
-    let r1 = 1.0;
-    let r2 = 2.0;
-    let k2 = 5.0;
-    let k1 = 30.0 * scale;
-
-    let mut lighted = Vec::with_capacity(12);
-    for i in 0..=11 {
-        let c = ".,-~:;=!*#$@".chars().nth(i).unwrap();
-        let s = if light_adv {
-            format!("\x1B[38;5;{}m{}", 233 + 2 * i, c)
-        } else {
-            format!("{}", c)
-        };
-        lighted.push(s);
-    }
-
-    let (mut a, mut b) = (0.0_f64, 0.0_f64);
-
-    let (mut output, mut zbuffer) = (vec![" "; swidth * sheight], vec![0.0; swidth * sheight]);
-
-    // clear screen
-    println!("\x1B[2J");
-    loop {
-        let (sina, cosa) = a.sin_cos();
-        let (sinb, cosb) = b.sin_cos();
-
-        let mut phi = 0.0;
-        while phi < 2.0 * PI {
-            let (sinp, cosp) = phi.sin_cos();
-
-            let mut theta = 0.0;
-            while theta < 2.0 * PI {
-                let (sint, cost) = theta.sin_cos();
-
-                // this closure rotate a vector (ry -> rx -> rz), M(phi, a, b).
-                // see https://en.wikipedia.org/wiki/Rotation_matrix for more information.
-                // note: this closure dont use z, just because in this program z always 0.
-                let rotate_yxz = |xi, yi| {
-                    let t1 = xi * sina * sinp + yi * cosa;
-                    let t2 = xi * cosp;
-                    (
-                        t1 * sinb + t2 * cosb,
-                        t1 * cosb - t2 * sinb,
-                        xi * cosa * sinp - yi * sina,
-                    )
-                };
-
-                // first, make a point on a circle.
-                let (x1, y1) = (r1 * cost + r2, r1 * sint);
-
-                // second, rotate it to right position.
-                let (x, y, z) = rotate_yxz(x1, y1);
-                let zd = 1.0 / (z + k2);
-
-                // third, map the point to the right place on monitor.
-                let (x, y) = (
-                    ((swidth / 2) as f64 + k1 * zd * x) as usize,
-                    ((sheight / 2) as f64 - k1 / 2.0 * zd * y) as usize,
-                );
-
-                // calculating light, assuming that the light source is above.
-                // (cost, sint, 0) are the normal vectors of the circle.
-                let t = rotate_yxz(cost, sint);
-                let n = 8.0 * (t.1 - t.2);
-
-                let o = swidth * y + x;
-                if y < sheight && x < swidth && zd > zbuffer[o] {
-                    zbuffer[o] = zd;
-                    output[o] = lighted.get(n as usize).unwrap_or(&lighted[0]);
-                }
-                theta += phi_step;
-            }
-            phi += theta_step;
-        }
-
-        // print whole graph
-        println!(
-            "\x1B[H{}",
-            output
-                .chunks(swidth)
-                .map(|l| l.concat())
-                .collect::<Vec<String>>()
-                .join("\n")
-        );
-
-        // prepare for the next loop
-        std::thread::sleep(std::time::Duration::from_millis(sleep_time));
-        output.fill(" ");
-        zbuffer.fill(0.0);
-
-        // rotate whole graph
-        a += 1.0 / 2.0_f64.powf(6.0) * PI;
-        b += 1.0 / 2.0_f64.powf(7.0) * PI;
-    }
-}
+                    use std::{ time,
+               thread,f64};fn main(){let s
+           =f64::consts::PI;let (w,h)= (60,26
+        );let k= 30.0;let mut l=Vec::new();for i
+      in 0..=11{let c=".,-~:;=!*#$@".chars().nth(i)
+    .unwrap();let s=format!("\x1B[38;5;{}m{}",233+2*i
+    ,c);l.push(s);} let(mut a,mut b)=(0.0_f64,0.0_f64);
+   println!( "\x1B[2J");        loop {let((c,i),(j,q))=(a.
+ sin_cos(),b.sin_cos(              ));let(mut o,mut m) = (
+vec![" ";w*h],vec![                 0.0;w*h]);let mut p=0.0;
+while p<2.0*s{let(n                  ,g)=p.sin_cos();let mut
+t=0.0;while t<2.0*s                  {let(p,ct)=t.sin_cos();
+let r=|xi,yi|{let(u,                 v)=(xi*c*n+yi*i,xi*g);
+(u*j+v*q,u*q-v*j,xi*i               *n-yi*c)};let(e,f)=(ct+
+ 2.0,p);let(x,y,z)=r(e,           f);let z=1.0/(z+5.0);let(
+  x,y)=((30.0+k*z*x)as usize,(13.0-k/2.0*z*y)as usize);let
+   k=r(ct,p);let n=8.0*(k.1-k.2);let g=w*y+x;if y<h &&x<w
+    &&z>m[g]{m[g]=z ;o[ g]=l.get(n as usize).unwrap_or(
+     &l[0]);}t +=s/128.0;}p+= s/128.0;}println!("\x1B\
+      [H{}",o.chunks(w).map(|l|l.concat()).collect::<
+        Vec<String>>().join("\n"));thread::sleep(
+           time::Duration::from_millis(32))
+                 ;a+=0.07;b+=0.03;}}
