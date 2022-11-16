@@ -34,9 +34,9 @@ pub fn render_frame(
                 let t1 = xi * sina * sinp + yi * cosa;
                 let t2 = xi * cosp;
                 (
-                    t1 * sinb + t2 * cosb,
                     t1 * cosb - t2 * sinb,
-                    xi * cosa * sinp - yi * sina,
+                    t1 * sinb + t2 * cosb,
+                    yi * sina - xi * cosa * sinp
                 )
             };
 
