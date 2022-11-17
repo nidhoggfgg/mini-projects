@@ -31,7 +31,7 @@ pub enum Expr {
     },
     Fun {
         idx: u64,
-        args: Vec<f64>,
+        args: Vec<Box<Expr>>,
     },
 }
 

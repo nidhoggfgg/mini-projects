@@ -10,10 +10,10 @@ fn main() {
         io::stdout().flush().expect("flush error");
 
         let mut line = String::with_capacity(8);
-        io::stdin().read_line(&mut line).expect("fail to input");
+        io::stdin().read_line(&mut line).expect("fail to read input");
 
         // exit
-        if line == "exit\n" {
+        if line == "exit\n" || line == "exit" {
             break;
         }
 

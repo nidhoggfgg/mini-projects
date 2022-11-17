@@ -14,7 +14,6 @@ use crate::{
 
 pub struct Env {
     functions: HashMap<u64, Box<Expr>>,
-    locals: Vec<f64>,
     builtin: HashMap<u64, Box<dyn Fn(f64) -> f64>>,
     global: HashMap<u64, f64>,
 }
@@ -50,7 +49,6 @@ impl Env {
         ]);
         Env {
             functions: HashMap::new(),
-            locals: Vec::new(),
             builtin,
             global,
         }
@@ -70,9 +68,9 @@ impl Env {
                 self.functions.insert(idx, body);
                 None
             }
-            Stmt::Expr { expr } => expr.value(self),
+            Stmt::Expr { expr } => expr.value(self, None),
             Stmt::Assign { idx, expr } => {
-                let value = expr.value(self)?;
+                let value = expr.value(self, None)?;
                 self.global.insert(idx, value);
                 None
             }
@@ -81,16 +79,16 @@ impl Env {
 }
 
 trait Value {
-    fn value(&self, env: &mut Env) -> Option<f64>;
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64>;
 }
 
 impl Value for Valuable {
-    fn value(&self, env: &mut Env) -> Option<f64> {
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
             Self::Value(v) => Some(*v),
             Self::Arg(i) => {
-                if let Some(v) = env.locals.get(*i) {
-                    Some(v).copied()
+                if let Some(v) = locals?.get(*i) {
+                    Some(*v)
                 } else {
                     print_err!("too little values give");
                     None
@@ -98,7 +96,7 @@ impl Value for Valuable {
             }
             Self::Var(name) => {
                 if let Some(v) = env.global.get(name) {
-                    Some(v).copied()
+                    Some(*v)
                 } else {
                     print_err!("can't find variable named '{}'", name);
                     None
@@ -109,12 +107,12 @@ impl Value for Valuable {
 }
 
 impl Value for Expr {
-    fn value(&self, env: &mut Env) -> Option<f64> {
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
-            Expr::Literal { value } => value.value(env),
+            Expr::Literal { value } => value.value(env, locals),
             Expr::Binary { left, op, right } => {
-                let lv = left.value(env)?;
-                let rv = right.value(env)?;
+                let lv = left.value(env, locals)?;
+                let rv = right.value(env, locals)?;
                 let result = match op {
                     BinaryOp::Plus => lv + rv,
                     BinaryOp::Sub => lv - rv,
@@ -125,34 +123,36 @@ impl Value for Expr {
                 Some(result)
             }
             Expr::Fun { idx, args } => {
-                env.locals.clear();
-                for v in args {
-                    env.locals.push(*v);
+                let mut locals = Vec::new();
+                for e in args {
+                    let v = e.value(env, None)?;
+                    locals.push(v);
                 }
-                if let Some((name, body)) = env.functions.remove_entry(idx) {
-                    let result = body.value(env);
-                    env.functions.insert(name, body);
+                if let Some((_, body)) = env.functions.get_key_value(idx) {
+                    let result = body.value(env, Some(&locals));
                     result
-                } else if let Some(f) = env.builtin.get(idx) {
+                } else if let Some((_, f)) = env.builtin.get_key_value(idx) {
                     if args.len() != 1 {
                         print_err!("need and only need 1 argument");
                         return None;
                     }
-                    Some(f(args[0]))
+                    let v = args[0].value(env, Some(&locals))?;
+                    let v = f(v);
+                    Some(v)
                 } else {
                     print_err!("function is not defined");
                     None
                 }
             }
             Expr::Unary { op, operand } => {
-                let value = operand.value(env)?;
+                let value = operand.value(env, locals)?;
                 let result = match op {
                     UnaryOp::Minus => -value,
                     UnaryOp::Ftl => factorial(value as u32),
                 };
                 Some(result)
             }
-            Expr::Group { body } => body.value(env),
+            Expr::Group { body } => body.value(env, locals),
         }
     }
 }

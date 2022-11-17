@@ -247,14 +247,10 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             let mut values = Vec::new();
 
-            while let Some(Token::Number(_)) = &self.next {
-                let num = if let Some(Token::Number(num)) = self.next() {
-                    num
-                } else {
-                    print_err!("expect number in function call");
-                    return None;
-                };
-                values.push(num);
+            while !self.check(Token::RightParen) {
+                let t = self.next()?;
+                let expr = self.expr(t)?;
+                values.push(expr);
             }
 
             if !self.expect(Token::RightParen) {

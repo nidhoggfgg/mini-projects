@@ -48,6 +48,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
 
     fn scan_token(&mut self) -> Option<Token> {
         self.skip_space();
+        self.skip_comment();
         let c = self.next.take()?;
         self.eat();
 
@@ -128,6 +129,20 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             match c {
                 ' ' | '\t' | '\r' | '\n' => self.eat(),
                 _ => break,
+            }
+        }
+    }
+
+    fn skip_comment(&mut self) {
+        if Some('#') == self.next {
+            while let Some(c) = self.next {
+                match c {
+                    '\n' => {
+                        self.eat();
+                        break;
+                    },
+                    _ => self.eat(),
+                }
             }
         }
     }
