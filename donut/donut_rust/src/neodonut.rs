@@ -86,7 +86,7 @@ fn deal_args() -> (Imp, Option<(f64, f64)>) {
     };
     while let Some(a) = args.next() {
         match a.as_str() {
-            "--improve" => match args.next().unwrap_or("".to_owned()).as_str() {
+            "--improve" => match args.next().unwrap_or_else(|| "".to_owned()).as_str() {
                 "color" => {
                     imp = Imp::Color;
                 }

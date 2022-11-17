@@ -1,4 +1,4 @@
-use rand::{distributions::weighted, Rng};
+use rand::Rng;
 use std::f64::consts::SQRT_2;
 use std::fmt;
 use terminal_size::{terminal_size, Height, Width};
@@ -38,7 +38,7 @@ pub fn render_frame(
                 (
                     t1 * cosb - t2 * sinb,
                     t1 * sinb + t2 * cosb,
-                    yi * sina - xi * cosa * sinp
+                    yi * sina - xi * cosa * sinp,
                 )
             };
 
