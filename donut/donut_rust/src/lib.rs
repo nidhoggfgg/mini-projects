@@ -1,4 +1,5 @@
-use rand::Rng;
+use rand::{distributions::weighted, Rng};
+use std::f64::consts::SQRT_2;
 use std::fmt;
 use terminal_size::{terminal_size, Height, Width};
 pub const PI: f64 = std::f64::consts::PI;
@@ -19,6 +20,7 @@ pub fn render_frame(
     let (sinb, cosb) = r.1.sin_cos();
     let (width, height) = size;
     let (ts, ps) = step;
+    let (wd2, hd2, k1d2) = ((width / 2) as f64, (height / 2) as f64, k1 / 2.0);
     let mut phi = 0.0;
     while phi < 2.0 * PI {
         let (sinp, cosp) = phi.sin_cos();
@@ -48,15 +50,12 @@ pub fn render_frame(
             let zd = 1.0 / (z + k2);
 
             // third, map the point to the right place on monitor.
-            let (x, y) = (
-                ((width / 2) as f64 + k1 * zd * x) as usize,
-                ((height / 2) as f64 - k1 / 2.0 * zd * y) as usize,
-            );
+            let (x, y) = ((wd2 + k1 * zd * x) as usize, (hd2 - k1d2 * zd * y) as usize);
 
             // calculating light, assuming that the light source is above.
             // (cost, sint, 0) are the normal vectors of the circle.
             let t = rotate_yxz(cost, sint);
-            let n = 8.0 * (t.1 - t.2);
+            let n = 11.0 * (t.1 - t.2) / SQRT_2;
 
             let o = width * y + x;
             if y < height && x < width && zd > zbuffer[o] {
