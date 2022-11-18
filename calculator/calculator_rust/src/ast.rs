@@ -31,7 +31,7 @@ pub(crate) enum Expr {
     },
     Fun {
         idx: u64,
-        args: Vec<Box<Expr>>,
+        args: Vec<Expr>,
     },
 }
 

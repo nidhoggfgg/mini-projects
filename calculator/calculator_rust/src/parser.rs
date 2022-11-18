@@ -264,7 +264,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             while !self.check(Token::RightParen) {
                 let t = self.next()?;
-                let expr = self.call(t)?;
+                let expr = *self.call(t)?;
                 values.push(expr);
             }
 
