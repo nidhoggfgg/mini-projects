@@ -2,7 +2,7 @@
 
 [中文](./README_cn.md)
 
-some practical, mini and easy projects to help beginner used to writing code!
+some practical, mini and easy projects to help beginner used to writing code!  
 all the projects is for study and practice not for product!
 
 ## neodonut (Rust)
@@ -10,6 +10,23 @@ all the projects is for study and practice not for product!
 a donut re-impl and enhanced version.
 a sample:
 ![](./donut/donut_rust/imgs/default.gif)
+
+## calculator (Rust)
+
+a simple but powerful calculator  
+pls see this example
+
+```
+>>> 12.34 * 45.67 + 6! / 2^4
+608.5678
+>>> fun f(a b) = a^x + sin(b) * floor(a*b+5)
+>>> x = 4
+>>> f(ln(PI) E)
+5.003415549553682
+>>>
+```
+
+**note: it is in dev, some thing will change**
 
 ## termgraph (Python, Rust)
 

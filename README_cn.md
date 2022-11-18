@@ -8,6 +8,23 @@
 这是一个甜甜圈的复刻版本，以及一个增强版本。
 ![](./donut/donut_rust/imgs/default.gif)
 
+## 计算器 (Rust)
+
+一个非常强大的计算器  
+下面这个例子就足以略窥一二
+
+```
+>>> 12.34 * 45.67 + 6! / 2^4
+608.5678
+>>> fun f(a b) = a^x + sin(b) * floor(a*b+5)
+>>> x = 4
+>>> f(ln(PI) E)
+5.003415549553682
+>>>
+```
+
+**note: 还在开发中，可能会有所变化**
+
 ## 终端中看股票 (Python, Rust)
 
 一个 [termgraph](https://github.com/sgeisler/termgraph.git) 的复刻版，但是简化过了(简化了代码，没有简化功能)。
