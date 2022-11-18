@@ -29,7 +29,7 @@ pub(crate) enum Expr {
         op: BinaryOp,
         right: Box<Expr>,
     },
-    Fun {
+    Call {
         idx: u64,
         args: Vec<Expr>,
     },

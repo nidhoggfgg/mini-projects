@@ -60,11 +60,19 @@ impl Env {
     fn run_impl(&mut self, stmt: Stmt) -> Option<f64> {
         match stmt {
             Stmt::Fun { idx, body } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit fun define: {}", idx);
                 self.functions.insert(idx, body);
                 None
             }
-            Stmt::Expr { expr } => expr.value(self, None),
+            Stmt::Expr { expr } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit expression");
+                expr.value(self, None)
+            }
             Stmt::Assign { idx, expr } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit variable assign: {}", idx);
                 let value = expr.value(self, None)?;
                 self.global.insert(idx, value);
                 None
@@ -80,8 +88,14 @@ trait Value {
 impl Value for Valuable {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
-            Self::Value(v) => Some(*v),
+            Self::Value(v) => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit value: {}", v);
+                Some(*v)
+            }
             Self::Arg(i) => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit arg: {}", i);
                 if let Some(v) = locals?.get(*i) {
                     Some(*v)
                 } else {
@@ -89,11 +103,13 @@ impl Value for Valuable {
                     None
                 }
             }
-            Self::Var(name) => {
-                if let Some(v) = env.global.get(name) {
+            Self::Var(idx) => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit variable: {}", idx);
+                if let Some(v) = env.global.get(idx) {
                     Some(*v)
                 } else {
-                    print_err!("can't find variable named '{}'", name);
+                    print_err!("can't find variable named '{}'", idx);
                     None
                 }
             }
@@ -104,8 +120,14 @@ impl Value for Valuable {
 impl Value for Expr {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
-            Expr::Literal { value } => value.value(env, locals),
+            Expr::Literal { value } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit literal: {:?}", value);
+                value.value(env, locals)
+            }
             Expr::Binary { left, op, right } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit binary: op: {:?}", op);
                 let lv = left.value(env, locals)?;
                 let rv = right.value(env, locals)?;
                 let result = match op {
@@ -117,21 +139,22 @@ impl Value for Expr {
                 };
                 Some(result)
             }
-            Expr::Fun { idx, args } => {
-                let mut locals = Vec::new();
+            Expr::Call { idx, args } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit call: {:?}", idx);
+                let mut ths_locals = Vec::new();
                 for e in args {
-                    let v = e.value(env, None)?;
-                    locals.push(v);
+                    let v = e.value(env, locals)?;
+                    ths_locals.push(v);
                 }
                 if let Some((_, body)) = env.functions.get_key_value(idx) {
-                    body.value(env, Some(&locals))
+                    body.value(env, Some(&ths_locals))
                 } else if let Some((_, f)) = env.builtin.get_key_value(idx) {
-                    if args.len() != 1 {
+                    if ths_locals.len() != 1 {
                         print_err!("need and only need 1 argument");
                         return None;
                     }
-                    let v = args[0].value(env, Some(&locals))?;
-                    let v = f(v);
+                    let v = f(ths_locals[0]);
                     Some(v)
                 } else {
                     print_err!("function is not defined");
@@ -139,6 +162,8 @@ impl Value for Expr {
                 }
             }
             Expr::Unary { op, operand } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit unary: op: {:?}", op);
                 let value = operand.value(env, locals)?;
                 let result = match op {
                     UnaryOp::Minus => -value,
@@ -146,7 +171,11 @@ impl Value for Expr {
                 };
                 Some(result)
             }
-            Expr::Group { body } => body.value(env, locals),
+            Expr::Group { body } => {
+                #[cfg(feature = "runtime_dev")]
+                println!("visit group");
+                body.value(env, locals)
+            }
         }
     }
 }

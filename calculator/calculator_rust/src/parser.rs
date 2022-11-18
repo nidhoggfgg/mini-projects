@@ -63,6 +63,9 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             return None;
         }
 
+        #[cfg(feature = "parser_dev")]
+        println!("{:#?}", stmt);
+
         stmt
     }
 
@@ -264,7 +267,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             while !self.check(Token::RightParen) {
                 let t = self.next()?;
-                let expr = *self.call(t)?;
+                let expr = *self.expr(t)?;
                 values.push(expr);
             }
 
@@ -273,7 +276,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 return None;
             }
 
-            return Some(Box::new(Expr::Fun { idx, args: values }));
+            return Some(Box::new(Expr::Call { idx, args: values }));
         }
 
         self.primary(start)
