@@ -5,14 +5,29 @@ use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable};
 use crate::lexer::Token;
 use crate::utils::print_err;
 
-pub struct Parser<T: Iterator<Item = Token>> {
+// this file is an impl of recursive descent parser
+// EBNF:
+// prog = { stmt }
+// stmt = fun | assign
+// fun = idx '(' ')' = expr
+// assign = expr | (idx '=' expr)
+// expr = plus_sub
+// plus_sub = { mult_div ('+'|'-') } mult_div
+// mult_div = { square ('*'|'/') } square
+// square = { minus '^' } minus
+// minus = ('-' minus) | factorial
+// factorial = call ['!']
+// call = primary | idx '(' call {call} ')'
+// primary = idx | number | ( '(' expr ')' )
+
+pub(crate) struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
     next: Option<Token>,
     args: HashMap<u64, usize>,
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
-    pub fn new(tokens: T) -> Self {
+    pub(crate) fn new(tokens: T) -> Self {
         let mut parser = Parser {
             tokens,
             next: None,
@@ -23,7 +38,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         parser
     }
 
-    pub fn parse(&mut self) -> Option<Box<Stmt>> {
+    pub(crate) fn parse(&mut self) -> Option<Box<Stmt>> {
         let start = self.next().unwrap();
 
         let stmt = match start {
@@ -249,7 +264,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             while !self.check(Token::RightParen) {
                 let t = self.next()?;
-                let expr = self.expr(t)?;
+                let expr = self.call(t)?;
                 values.push(expr);
             }
 

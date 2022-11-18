@@ -140,7 +140,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
                     '\n' => {
                         self.eat();
                         break;
-                    },
+                    }
                     _ => self.eat(),
                 }
             }

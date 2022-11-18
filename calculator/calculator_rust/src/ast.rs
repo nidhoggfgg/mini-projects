@@ -1,19 +1,19 @@
 #[derive(Debug)]
-pub enum Stmt {
+pub(crate) enum Stmt {
     Fun { idx: u64, body: Box<Expr> },
     Assign { idx: u64, expr: Box<Expr> },
     Expr { expr: Box<Expr> },
 }
 
 #[derive(Debug)]
-pub enum Valuable {
-    Value(f64),
-    Arg(usize),
-    Var(u64),
+pub(crate) enum Valuable {
+    Value(f64), // normal number
+    Arg(usize), // arg in function
+    Var(u64),   // variable
 }
 
 #[derive(Debug)]
-pub enum Expr {
+pub(crate) enum Expr {
     Literal {
         value: Valuable,
     },
@@ -36,13 +36,13 @@ pub enum Expr {
 }
 
 #[derive(Debug)]
-pub enum UnaryOp {
+pub(crate) enum UnaryOp {
     Minus,
     Ftl,
 }
 
 #[derive(Debug)]
-pub enum BinaryOp {
+pub(crate) enum BinaryOp {
     Plus,
     Sub,
     Mult,
