@@ -70,10 +70,12 @@ pub fn render_frame(
 
 pub fn get_term_size() -> (usize, usize) {
     let size = terminal_size();
-    if let Some((Width(_), Height(h))) = size {
-        // dont use the real width, the torus is more likely a square.
-        // note: w almost double h just because the width of a char almost equal to double its height
-        (2 * h as usize, h as usize - 5)
+    if let Some((Width(w), Height(h))) = size {
+        if w > 2 * h {
+            return (2 * h as usize, (h - 5) as usize)
+        } else {
+            return (w as usize, (w / 2) as usize)
+        }
     } else {
         (60, 30)
     }
@@ -96,7 +98,7 @@ pub fn gen_char_seq(color: &mut (u8, u8, u8), imp: Imp) -> Vec<Colored> {
 }
 
 fn gen_none_char() -> Vec<Colored> {
-    let color = (128, 128, 128);
+    let color = (192, 192, 192);
     let mut colored = Vec::with_capacity(12);
     let chars = ".,-~:;=!*#$@".chars();
     for c in chars {

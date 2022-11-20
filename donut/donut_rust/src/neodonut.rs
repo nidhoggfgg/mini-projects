@@ -74,12 +74,12 @@ fn deal_args() -> (Imp, Option<(f64, f64)>) {
     let help = || {
         println!(
             r#"
-                usage: neodonut [--improve <color|light|none>] [--sample <t> <p>]
-                    --improve    color: render donut with color and light
-                                 light: render donut only with light improvment
-                                 none: render donut just use ascii char without color and light improve.
-                    --sample     t: sample of the theta
-                                 p: sample of the phi
+    usage: neodonut [--improve <color|light|none>] [--sample <t> <p>]
+        --improve    color: render donut with color and light
+                        light: render donut only with light improvment
+                        none: render donut just use ascii char without color and light improve.
+        --sample     t: sample of the theta
+                        p: sample of the phi
         "#
         );
         process::exit(64);
