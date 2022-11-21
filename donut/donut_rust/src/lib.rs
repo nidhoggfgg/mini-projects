@@ -94,12 +94,8 @@ pub fn render(color: (u8, u8, u8), imp: Imp, sleep_time: u64, smp: Option<(f64, 
             &char_seq,
         );
 
-        // hide the cursor, when fps is low, it will useful
-        println!("\x1B[?25l");
         // print whole graph
-        println!("{}", s);
-        // show the cursor
-        println!("\x1B[?25h");
+        println!("\x1B[?25l{}\x1B[?25h", s);
 
         // prepare for the next loop
         thread::sleep(time::Duration::from_millis(sleep_time));
