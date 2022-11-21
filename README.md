@@ -7,7 +7,7 @@ all the projects is for study and practice not for product!
 
 ## neodonut (Rust)
 
-a donut re-impl and enhanced version.
+a donut re-impl and enhanced version (support multi-threads).  
 a sample:
 ![](./donut/donut_rust/imgs/default.gif)
 

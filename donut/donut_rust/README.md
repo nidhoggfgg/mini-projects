@@ -53,7 +53,10 @@ with `--improve light`
 with `--improve none --sample 20 15`
 ![](./imgs/sample.gif)
 
+btw, there is a really experimental args `--threads <num>`.  
+this arg indicate how many threads should be use, like 8 or 16.  
+use 8 or 16 is really fast but it will use much cpu (on my laptop, it use 40% cpu R7-4800H) and the performance of terminal limit the fps
+(even use the fastest terminal alacritty)
+
 note: when the graph become very huge (e.g. height is above 300), render it will become really slow.
 
-It might be useful to do some optimizations, but I plan to write a multi-threaded version.
-(but in that version, fps doesn't improve much. this is because the performance of terminal.)
