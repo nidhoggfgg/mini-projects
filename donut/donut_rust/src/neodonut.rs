@@ -1,76 +1,22 @@
 use std::process;
 
-use donut_rust::{
-    gen_char_seq, get_term_size, init_matrix, init_param, listen_term_change, render_frame,
-    Colored, Imp, PI,
-};
-
-static SLEEP_TIME: u64 = 32;
+use donut_rust::{render, render_fast, Imp};
 
 fn main() {
-    let mut color = (128, 128, 128);
-    let (mut width, mut height) = get_term_size();
-    let (mut k1, mut sample_theta, mut sample_phi) = init_param!(width, height);
-    let (imp, sample) = deal_args();
-    if let Some(s) = sample {
-        sample_theta = s.0;
-        sample_phi = s.1;
-    }
-
-    let (mut a, mut b) = (0.0_f64, 0.0_f64);
-    let (mut output, mut zbuffer) = init_matrix(width, height);
-    let mut char_seq = gen_char_seq(&mut color, imp);
-    // clear screen
-    println!("\x1B[2J");
-    loop {
-        if let Some((w, h)) = listen_term_change((width, height)) {
-            (k1, sample_theta, sample_phi) = init_param!(w, h, width, (sample_theta, sample_phi));
-            (output, zbuffer) = init_matrix(w, h);
-            println!("\x1B[2J");
-            height = h;
-            width = w;
-        }
-        render_frame(
-            (a, b),
-            k1,
-            (width, height),
-            (PI / sample_theta, PI / sample_phi),
-            &mut output,
-            &mut zbuffer,
-            &char_seq,
-        );
-
-        // hide the cursor, when fps is low, it will useful
-        println!("\x1B[?25l");
-        // print whole graph
-        println!(
-            "\x1B[H{}",
-            output
-                .chunks(width)
-                .map(|l| l.iter().map(|c| format!("{}", c)).collect::<String>())
-                .collect::<Vec<String>>()
-                .join("\n")
-        );
-        // show the cursor
-        println!("\x1B[?25h");
-
-        // prepare for the next loop
-        std::thread::sleep(std::time::Duration::from_millis(SLEEP_TIME));
-        char_seq = gen_char_seq(&mut color, imp);
-        // fill it rather than made a new vec is a little fast.
-        output.fill(Colored::default());
-        zbuffer.fill(0.0);
-
-        // rotate whole graph
-        a += 1.0 / 2.0_f64.powf(6.0) * PI;
-        b += 1.0 / 2.0_f64.powf(7.0) * PI;
+    let (imp, sample, threads) = deal_args();
+    let color = (192, 192, 192);
+    if threads == 1 {
+        render(color, imp, 32, sample);
+    } else {
+        render_fast(color, imp, sample, threads);
     }
 }
 
-fn deal_args() -> (Imp, Option<(f64, f64)>) {
+fn deal_args() -> (Imp, Option<(f64, f64)>, usize) {
     let mut imp = Imp::Color;
     let mut sample = None;
     let mut args = std::env::args();
+    let mut threads = 1;
     let help = || {
         println!(
             r#"
@@ -80,6 +26,7 @@ fn deal_args() -> (Imp, Option<(f64, f64)>) {
                         none: render donut just use ascii char without color and light improve.
         --sample     t: sample of the theta
                         p: sample of the phi
+        --threads    use how many threads to calc and print (default 1)
         "#
         );
         process::exit(64);
@@ -118,9 +65,22 @@ fn deal_args() -> (Imp, Option<(f64, f64)>) {
                     print_usage();
                 }
             }
+            "--threads" => {
+                if let Some(num) = args
+                    .next()
+                    .unwrap_or("bad".to_owned())
+                    .parse::<usize>()
+                    .ok()
+                {
+                    threads = num;
+                } else {
+                    println!("pls use: --threads <number> (e.g. --threads 8");
+                    process::exit(64);
+                }
+            }
             "--help" | "help" | "-h" => help(),
             _ => continue, // ignore other args
         }
     }
-    (imp, sample)
+    (imp, sample, threads)
 }

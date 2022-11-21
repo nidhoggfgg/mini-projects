@@ -1,26 +1,130 @@
 use rand::Rng;
-use std::f64::consts::SQRT_2;
-use std::fmt;
+use std::f64::consts::{PI, SQRT_2};
+use std::sync::{mpsc, Arc, Mutex};
+use std::{fmt, thread, time};
 use terminal_size::{terminal_size, Height, Width};
-pub const PI: f64 = std::f64::consts::PI;
+
+// use channel for multi-threads. multiple producer, single consumer
+// producer almost the render_frame(), will produce (String to print, width + height of the terminal)
+// consumer check the terminal size and print the String
+pub fn render_fast(color: (u8, u8, u8), imp: Imp, smp: Option<(f64, f64)>, thread_num: usize) {
+    // sender and reciver
+    let (tx, rx) = mpsc::channel();
+
+    // value used in all thread
+    let (a, b) = (Arc::new(Mutex::new(0.0)), Arc::new(Mutex::new(0.0)));
+    let color = Arc::new(Mutex::new(color));
+
+    for _ in 0..thread_num {
+        // clone the ref
+        let tx = tx.clone();
+        let color = color.clone();
+        let (a, b) = (a.clone(), b.clone());
+
+        thread::spawn(move || {
+            // init parameters
+            let (mut width, mut height) = get_term_size();
+            let (mut k1, mut sample) = init_param!(width, height);
+            if let Some(s) = smp {
+                sample = s;
+            }
+
+            loop {
+                // deal with the terminal change
+                if let Some((w, h)) = listen_term_change((width, height)) {
+                    (k1, sample) = init_param!(w, h, width, sample);
+                    println!("\x1B[2J");
+                    height = h;
+                    width = w;
+                }
+
+                let step = sample_to_step!(sample);
+                let c = &mut color.lock().unwrap();
+                let (mut a, mut b) = (a.lock().unwrap(), b.lock().unwrap());
+
+                let char_seq = gen_char_seq(c, imp);
+                let (s, wh) = render_frame((*a, *b), k1, (width, height), step, &char_seq);
+
+                *a += PI / 64.0;
+                *b += PI / 128.0;
+
+                // send and sleep
+                tx.send((s, wh)).unwrap();
+                thread::sleep(time::Duration::from_millis(10));
+            }
+        });
+    }
+
+    println!("\x1B[2J");
+    for (s, wh) in rx {
+        let (w, h) = get_term_size();
+        if w + h != wh {
+            continue;
+        }
+
+        println!("\x1B[?25l{}\x1B[?25h", s);
+    }
+}
+
+pub fn render(color: (u8, u8, u8), imp: Imp, sleep_time: u64, smp: Option<(f64, f64)>) {
+    let mut color = color;
+    let (mut width, mut height) = get_term_size();
+    let (mut k1, mut sample) = init_param!(width, height);
+    if let Some(s) = smp {
+        sample = s;
+    }
+
+    let (mut a, mut b) = (0.0_f64, 0.0_f64);
+    let mut char_seq = gen_char_seq(&mut color, imp);
+
+    // clear screen
+    println!("\x1B[2J");
+    loop {
+        if let Some((w, h)) = listen_term_change((width, height)) {
+            (k1, sample) = init_param!(w, h, width, sample);
+            println!("\x1B[2J");
+            height = h;
+            width = w;
+        }
+        let (s, _) = render_frame(
+            (a, b),
+            k1,
+            (width, height),
+            sample_to_step!(sample),
+            &char_seq,
+        );
+
+        // hide the cursor, when fps is low, it will useful
+        println!("\x1B[?25l");
+        // print whole graph
+        println!("{}", s);
+        // show the cursor
+        println!("\x1B[?25h");
+
+        // prepare for the next loop
+        thread::sleep(time::Duration::from_millis(sleep_time));
+        char_seq = gen_char_seq(&mut color, imp);
+
+        // rotate whole graph
+        a += 1.0 / 2.0_f64.powf(6.0) * PI;
+        b += 1.0 / 2.0_f64.powf(7.0) * PI;
+    }
+}
 
 pub fn render_frame(
     r: (f64, f64),
     k1: f64,
     size: (usize, usize),
     step: (f64, f64),
-    output: &mut [Colored],
-    zbuffer: &mut [f64],
     impc: &[Colored],
-) {
-    let r1 = 1.0;
-    let r2 = 2.0;
-    let k2 = 5.0;
-    let (sina, cosa) = r.0.sin_cos();
-    let (sinb, cosb) = r.1.sin_cos();
+) -> (String, usize) {
+    let (r1, r2, k2) = (1.0, 2.0, 5.0);
     let (width, height) = size;
+    let (mut output, mut zbuffer) = init_matrix(width, height);
     let (ts, ps) = step;
+    let ((sina, cosa), (sinb, cosb)) = (r.0.sin_cos(), r.1.sin_cos());
     let (wd2, hd2, k1d2) = ((width / 2) as f64, (height / 2) as f64, k1 / 2.0);
+
     let mut phi = 0.0;
     while phi < 2.0 * PI {
         let (sinp, cosp) = phi.sin_cos();
@@ -60,21 +164,33 @@ pub fn render_frame(
             let o = width * y + x;
             if y < height && x < width && zd > zbuffer[o] {
                 zbuffer[o] = zd;
-                output[o] = *impc.get(n as usize).unwrap_or(&impc[0]);
+                output[o] = *impc.get(n as usize).unwrap_or(impc.last().unwrap());
             }
             theta += ts;
         }
         phi += ps;
     }
+
+    (
+        format!(
+            "\x1B[H{}\n",
+            output
+                .chunks(width)
+                .map(|l| l.into_iter().map(|c| format!("{}", c)).collect())
+                .collect::<Vec<String>>()
+                .join("\n")
+        ),
+        width + height,
+    )
 }
 
 pub fn get_term_size() -> (usize, usize) {
     let size = terminal_size();
     if let Some((Width(w), Height(h))) = size {
         if w > 2 * h {
-            return (2 * h as usize, (h - 5) as usize)
+            return (2 * h as usize, (h - 5) as usize);
         } else {
-            return (w as usize, (w / 2) as usize)
+            return (w as usize, (w / 2) as usize);
         }
     } else {
         (60, 30)
@@ -163,6 +279,13 @@ pub fn init_matrix(w: usize, h: usize) -> (Vec<Colored>, Vec<f64>) {
     )
 }
 
+#[macro_export]
+macro_rules! sample_to_step {
+    ($sample: expr) => {
+        (PI / $sample.0, PI / $sample.1)
+    };
+}
+
 // the constant 1.8, 2.0 and 6.0 is just what i think is appropriate not the best.
 // but the performance of the terminal output has reached its limit,
 // and optimizing these constants will not improve the fps. :)
@@ -170,13 +293,15 @@ pub fn init_matrix(w: usize, h: usize) -> (Vec<Colored>, Vec<f64>) {
 #[macro_export]
 macro_rules! init_param {
     ($w: expr, $h: expr) => {
-        ($w as f64 / 1.8, $h as f64 * 2.0, $h as f64 * 6.0)
+        ($w as f64 / 1.8, ($h as f64 * 2.0, $h as f64 * 6.0))
     };
     ($w: expr, $h: expr, $ow: expr, $sample: expr) => {
         (
             $w as f64 / 1.8,
-            $sample.0 * $w as f64 / $ow as f64,
-            $sample.1 * $w as f64 / $ow as f64,
+            (
+                $sample.0 * $w as f64 / $ow as f64,
+                $sample.1 * $w as f64 / $ow as f64,
+            ),
         )
     };
 }
