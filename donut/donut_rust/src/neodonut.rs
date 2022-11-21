@@ -20,13 +20,13 @@ fn deal_args() -> (Imp, Option<(f64, f64)>, usize) {
     let help = || {
         println!(
             r#"
-    usage: neodonut [--improve <color|light|none>] [--sample <t> <p>]
+    usage: neodonut [--improve <color|light|none>] [--sample <t> <p>] [--threads <num>]
         --improve    color: render donut with color and light
                         light: render donut only with light improvment
                         none: render donut just use ascii char without color and light improve.
         --sample     t: sample of the theta
                         p: sample of the phi
-        --threads    use how many threads to calc and print (default 1)
+        --threads    num: use how many threads to calc and print (default 1)
         "#
         );
         process::exit(64);
@@ -66,11 +66,10 @@ fn deal_args() -> (Imp, Option<(f64, f64)>, usize) {
                 }
             }
             "--threads" => {
-                if let Some(num) = args
+                if let Ok(num) = args
                     .next()
-                    .unwrap_or("bad".to_owned())
+                    .unwrap_or_else(|| "bad".to_owned())
                     .parse::<usize>()
-                    .ok()
                 {
                     threads = num;
                 } else {

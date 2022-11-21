@@ -164,7 +164,7 @@ pub fn render_frame(
             let o = width * y + x;
             if y < height && x < width && zd > zbuffer[o] {
                 zbuffer[o] = zd;
-                output[o] = *impc.get(n as usize).unwrap_or(impc.last().unwrap());
+                output[o] = *impc.get(n as usize).unwrap_or_else(|| impc.last().unwrap());
             }
             theta += ts;
         }
@@ -176,7 +176,7 @@ pub fn render_frame(
             "\x1B[H{}\n",
             output
                 .chunks(width)
-                .map(|l| l.into_iter().map(|c| format!("{}", c)).collect())
+                .map(|l| l.iter().map(|c| format!("{}", c)).collect())
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
@@ -188,9 +188,9 @@ pub fn get_term_size() -> (usize, usize) {
     let size = terminal_size();
     if let Some((Width(w), Height(h))) = size {
         if w > 2 * h {
-            return (2 * h as usize, (h - 5) as usize);
+            (2 * h as usize, (h - 5) as usize)
         } else {
-            return (w as usize, (w / 2) as usize);
+            (w as usize, (w / 2) as usize)
         }
     } else {
         (60, 30)
