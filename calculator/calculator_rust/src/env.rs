@@ -11,6 +11,7 @@ pub struct Env {
     functions: HashMap<u64, Box<Expr>>,
     builtin: HashMap<u64, Box<dyn Fn(f64) -> f64>>,
     global: HashMap<u64, f64>,
+    var_name: Option<HashMap<u64, String>>,
 }
 
 impl Default for Env {
@@ -22,38 +23,41 @@ impl Default for Env {
 impl Env {
     pub fn new() -> Self {
         let builtin = HashMap::from([
-            (hash_it("ln"), Box::new(f64::ln) as Box<_>),
-            (hash_it("lg"), Box::new(f64::log10) as Box<_>),
-            (hash_it("sin"), Box::new(f64::sin) as Box<_>),
-            (hash_it("cos"), Box::new(f64::cos) as Box<_>),
-            (hash_it("tan"), Box::new(f64::tan) as Box<_>),
-            (hash_it("acos"), Box::new(f64::acos) as Box<_>),
-            (hash_it("asin"), Box::new(f64::asin) as Box<_>),
-            (hash_it("atan"), Box::new(f64::atan) as Box<_>),
-            (hash_it("sqrt"), Box::new(f64::sqrt) as Box<_>),
-            (hash_it("abs"), Box::new(f64::abs) as Box<_>),
-            (hash_it("sinh"), Box::new(f64::sinh) as Box<_>),
-            (hash_it("cosh"), Box::new(f64::cosh) as Box<_>),
-            (hash_it("cosh"), Box::new(f64::cosh) as Box<_>),
-            (hash_it("floor"), Box::new(f64::floor) as Box<_>),
+            (hash_it(&"ln"), Box::new(f64::ln) as Box<_>),
+            (hash_it(&"lg"), Box::new(f64::log10) as Box<_>),
+            (hash_it(&"sin"), Box::new(f64::sin) as Box<_>),
+            (hash_it(&"cos"), Box::new(f64::cos) as Box<_>),
+            (hash_it(&"tan"), Box::new(f64::tan) as Box<_>),
+            (hash_it(&"acos"), Box::new(f64::acos) as Box<_>),
+            (hash_it(&"asin"), Box::new(f64::asin) as Box<_>),
+            (hash_it(&"atan"), Box::new(f64::atan) as Box<_>),
+            (hash_it(&"sqrt"), Box::new(f64::sqrt) as Box<_>),
+            (hash_it(&"abs"), Box::new(f64::abs) as Box<_>),
+            (hash_it(&"sinh"), Box::new(f64::sinh) as Box<_>),
+            (hash_it(&"cosh"), Box::new(f64::cosh) as Box<_>),
+            (hash_it(&"cosh"), Box::new(f64::cosh) as Box<_>),
+            (hash_it(&"floor"), Box::new(f64::floor) as Box<_>),
         ]);
 
         let global = HashMap::from([
-            (hash_it("PI"), std::f64::consts::PI),
-            (hash_it("E"), std::f64::consts::E),
+            (hash_it(&"PI"), std::f64::consts::PI),
+            (hash_it(&"E"), std::f64::consts::E),
         ]);
         Env {
             functions: HashMap::new(),
             builtin,
             global,
+            var_name: None,
         }
     }
 
     pub fn run(&mut self, s: &str) -> Option<f64> {
         let mut lexer = Scanner::new(s.chars());
         let tokens = lexer.scan();
+        let var_name = lexer.pop_var_name();
         let mut parser = Parser::new(tokens.into_iter());
         let ast = parser.parse()?;
+        self.push_var_name(var_name);
         self.run_impl(*ast)
     }
 
@@ -77,6 +81,18 @@ impl Env {
                 self.global.insert(idx, value);
                 None
             }
+        }
+    }
+
+    fn push_var_name(&mut self, var_name: HashMap<u64, String>) {
+        self.var_name = Some(var_name);
+    }
+
+    fn find_name(&self, idx: u64) -> Option<&str> {
+        if let Some(namespace) = &self.var_name {
+            namespace.get(&idx).map(|x| &**x)
+        } else {
+            None
         }
     }
 }
@@ -109,7 +125,7 @@ impl Value for Valuable {
                 if let Some(v) = env.global.get(idx) {
                     Some(*v)
                 } else {
-                    print_err!("can't find variable named '{}'", idx);
+                    print_err!("can't find variable named '{}'", env.find_name(*idx).unwrap_or("Unknown"));
                     None
                 }
             }
@@ -157,7 +173,7 @@ impl Value for Expr {
                     let v = f(ths_locals[0]);
                     Some(v)
                 } else {
-                    print_err!("function is not defined");
+                    print_err!("function {} is not defined", env.find_name(*idx).unwrap_or("Unknown"));
                     None
                 }
             }

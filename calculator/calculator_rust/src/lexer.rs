@@ -12,6 +12,7 @@ pub enum Token {
     Slash,
     Bang,
     Square,
+    Comma,
     Eq,
     Fun,
     Number(f64),
@@ -24,6 +25,7 @@ pub struct Scanner<T: Iterator<Item = char>> {
     source: T,
     next: Option<char>,
     kw: HashMap<&'static str, Token>,
+    var_name: HashMap<u64, String>,
 }
 
 impl<T: Iterator<Item = char>> Scanner<T> {
@@ -32,6 +34,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             source,
             next: None,
             kw: HashMap::from([("fun", Token::Fun)]),
+            var_name: HashMap::new(),
         };
         scanner.eat();
         scanner
@@ -44,6 +47,10 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         }
         tokens.push(Token::Eof);
         tokens
+    }
+
+    pub fn pop_var_name(&mut self) -> HashMap<u64, String> {
+        std::mem::take(&mut self.var_name)
     }
 
     fn scan_token(&mut self) -> Option<Token> {
@@ -66,6 +73,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             '!' => Token::Bang,
             '^' => Token::Square,
             '=' => Token::Eq,
+            ',' => Token::Comma,
             '0'..='9' => self.number(c),
             _ => Token::Unknown,
         };
@@ -91,7 +99,9 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             return kw.clone();
         }
 
-        Token::Ident(utils::hash_it(lexeme))
+        let hash = utils::hash_it(&lexeme);
+        self.var_name.insert(hash, lexeme);
+        Token::Ident(hash)
     }
 
     fn number(&mut self, start: char) -> Token {

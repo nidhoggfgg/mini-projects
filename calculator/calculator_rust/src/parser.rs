@@ -9,7 +9,7 @@ use crate::utils::print_err;
 // EBNF:
 // prog = { stmt }
 // stmt = fun | assign
-// fun = idx '(' ')' = expr
+// fun = idx '(' {idx [',']} ')' = expr
 // assign = expr | (idx '=' expr)
 // expr = plus_sub
 // plus_sub = { mult_div ('+'|'-') } mult_div
@@ -128,6 +128,10 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             self.args.insert(idx, count);
             count += 1;
+
+            if self.check(Token::Comma) {
+                self.eat();
+            }
         }
 
         if !self.expect(Token::RightParen) {
@@ -269,6 +273,10 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 let t = self.next()?;
                 let expr = *self.expr(t)?;
                 values.push(expr);
+
+                if self.check(Token::Comma) {
+                    self.eat();
+                }
             }
 
             if !self.expect(Token::RightParen) {

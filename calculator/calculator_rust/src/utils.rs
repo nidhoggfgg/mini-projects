@@ -25,7 +25,7 @@ pub(crate) fn factorial(num: u32) -> f64 {
     result as f64
 }
 
-pub(crate) fn hash_it<T>(v: T) -> u64
+pub(crate) fn hash_it<T>(v: &T) -> u64
 where
     T: Hash,
 {
