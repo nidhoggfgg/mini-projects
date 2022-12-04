@@ -5,13 +5,13 @@
 some practical, mini and easy projects to help beginner used to writing code!  
 all the projects is for study and practice not for product!
 
-## neodonut (Rust)
+## [neodonut](./donut/README.md) (Rust)
 
 a donut re-impl and enhanced version (support multi-threads).  
 a sample:
 ![](./donut/donut_rust/imgs/default.gif)
 
-## calculator (Rust)
+## [calculator](./calculator/README.md) (Rust)
 
 a simple but powerful calculator  
 pls see this example
@@ -28,40 +28,40 @@ pls see this example
 
 **note: it is in dev, some thing will change**
 
-## termgraph (Python, Rust)
+## [termgraph](./termgraph/README.md) (Python, Rust)
 
 a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)
 but simplified!
 
 ![termgraph](./images/termgraph_colored.png)
 
-## framed-text (Python, Rust)
+## [framed-text](./framed_text/README.md) (Python, Rust)
 
 add frame to text. make text more attractive!
 
 ![framed-txt](./images/framed-text.png)
 
-## print-tables (Python, Rust)
+## [print-tables](./print_tables/README.md) (Python, Rust)
 
 make an tables in terminal!
 like the [tables in rich](https://github.com/Textualize/rich), but more simple and easy to read and write your own code!
 
 ![print-tables](./images/print-tables.png)
 
-## tree-printer (Python)
+## [tree-printer](./tree_printer/README.md) (Python)
 
 print the tree structure in visual way!
 only few line, recursive, simple, and easy to understand!
 
 ![tree-printer](./images/tree-printer.png)
 
-## blind-watermark (Python)
+## [blind-watermark](./blind_watermark/README.md) (Python)
 
 hide the information in a invisible way!
 
 ![hide-text](./images/blind-watermark-text.png)
 
-## spark (Python, Rust)
+## [spark](./spark/README.md) (Python, Rust)
 
 a hack version of [spark](https://github.com/holman/spark)!
 there is nothing hard in this hack version!
