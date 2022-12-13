@@ -9,6 +9,10 @@ edition = "2021"
 name = "basic"
 path = "src/bin/basic.rs"
 
+[[bin]]
+name = "turtle"
+path = "src/bin/turtle.rs"
+
 [dev-dependencies]
 criterion = "0.3"
 
