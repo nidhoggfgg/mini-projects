@@ -9,5 +9,9 @@ edition = "2021"
 name = "basic"
 path = "src/bin/basic.rs"
 
-[dependencies]
-terminal_size = "0.2"
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "speed_test"
+harness = false

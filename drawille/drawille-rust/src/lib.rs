@@ -1,5 +1,3 @@
-use terminal_size::{terminal_size, Height, Width};
-
 #[rustfmt::skip]
 const PIXEL_MAP: [[u32; 2]; 4] = [[0x01, 0x08],
                                   [0x02, 0x10],
@@ -10,25 +8,15 @@ const BASE_CHAR: u32 = 0x2800;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Canvas {
     pixels: Vec<Vec<u32>>,
-    width: usize,
-    height: usize,
 }
 
 impl Canvas {
     pub fn new() -> Self {
-        let (w, h) = Self::get_terminal_size();
-        let pixels = vec![vec![0; w]; h];
-        Self {
-            pixels,
-            width: w,
-            height: h,
-        }
+        let pixels = vec![vec![0; 10]; 10];
+        Self { pixels }
     }
 
     pub fn frame(&mut self) -> String {
-        self.pixels.shrink_to(0);
-        self.pixels.iter_mut().for_each(|row| row.shrink_to(0));
-
         unsafe {
             self.pixels
                 .iter()
@@ -43,57 +31,32 @@ impl Canvas {
     }
 
     pub fn clear(&mut self) {
-        let (w, h) = Self::get_terminal_size();
-        self.pixels = vec![vec![0; w]; h];
-        self.width = w;
-        self.height = h;
+        self.pixels = vec![vec![0; 10]; 10];
     }
 
     pub fn set(&mut self, x: f64, y: f64) {
         let (row, col) = get_pos(x, y);
-        if row >= self.height || col >= self.width {
-            panic!(
-                "the canvas size is too small, it need ({}, {}), but only have ({}, {})",
-                col, row, self.width, self.height
-            );
+        if row >= self.pixels.len() {
+            self.pad_row(row);
+        }
+        if col >= self.pixels[row].len() {
+            self.pad_col(row, col);
         }
         let (x, y) = (normalize(x), normalize(y));
-
         let pixel = PIXEL_MAP[y % 4][x % 2];
         self.pixels[row][col] |= pixel;
     }
 
-    pub fn unset(&mut self, x: f64, y: f64) {
-        todo!()
+    fn pad_row(&mut self, row: usize) {
+        let pad_num = row - self.pixels.len() + 1;
+        let mut pad = vec![vec![0; 10]; pad_num];
+        self.pixels.append(&mut pad);
     }
 
-    pub fn toggle(&mut self, x: f64, y: f64) {
-        todo!()
-    }
-
-    pub fn set_text(&mut self, x: f64, y: f64) {
-        todo!()
-    }
-
-    fn get(&mut self, x: f64, y: f64) {
-        todo!()
-    }
-
-    fn rows(&self) {
-        todo!()
-    }
-
-    fn get_terminal_size() -> (usize, usize) {
-        let size = terminal_size();
-        if let Some((Width(w), Height(h))) = size {
-            if w > 2 * h {
-                (2 * h as usize, (h - 5) as usize)
-            } else {
-                (w as usize, (w / 2) as usize)
-            }
-        } else {
-            (15, 20)
-        }
+    fn pad_col(&mut self, row: usize, col: usize) {
+        let pad_num = col - self.pixels[row].len() + 1;
+        let mut pad = vec![0; pad_num];
+        self.pixels[row].append(&mut pad);
     }
 }
 
