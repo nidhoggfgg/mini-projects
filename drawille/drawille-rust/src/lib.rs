@@ -12,7 +12,7 @@ pub struct Canvas {
 
 impl Canvas {
     pub fn new() -> Self {
-        let pixels = vec![vec![0; 10]; 10];
+        let pixels = Vec::new();
         Self { pixels }
     }
 
@@ -31,20 +31,46 @@ impl Canvas {
     }
 
     pub fn clear(&mut self) {
-        self.pixels = vec![vec![0; 10]; 10];
+        self.pixels = Vec::new();
     }
 
     pub fn set(&mut self, x: f64, y: f64) {
         let (row, col) = get_pos(x, y);
+        self.pad_row_col(row, col);
+        let pixel = Self::get_pixel(x, y);
+        self.pixels[row][col] |= pixel;
+    }
+
+    pub fn toggle(&mut self, x: f64, y: f64) {
+        let (row, col) = get_pos(x, y);
+        self.pad_row_col(row, col);
+        let pixel = Self::get_pixel(x, y);
+        if self.pixels[row][col] & pixel != 0 {
+            self.unset(x, y);
+        } else {
+            self.set(x, y);
+        }
+    }
+
+    fn unset(&mut self, x: f64, y: f64) {
+        let (row, col) = get_pos(x, y);
+        self.pad_row_col(row, col);
+        let pixel = Self::get_pixel(x, y);
+        self.pixels[row][col] &= !(pixel as u8) as u32;
+    }
+
+    fn get_pixel(x: f64, y: f64) -> u32 {
+        let (x, y) = (normalize(x), normalize(y));
+        PIXEL_MAP[y % 4][x % 2]
+    }
+
+    fn pad_row_col(&mut self, row: usize, col: usize) {
         if row >= self.pixels.len() {
             self.pad_row(row);
         }
         if col >= self.pixels[row].len() {
             self.pad_col(row, col);
         }
-        let (x, y) = (normalize(x), normalize(y));
-        let pixel = PIXEL_MAP[y % 4][x % 2];
-        self.pixels[row][col] |= pixel;
     }
 
     fn pad_row(&mut self, row: usize) {

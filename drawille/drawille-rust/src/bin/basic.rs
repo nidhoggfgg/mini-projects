@@ -23,4 +23,21 @@ fn main() {
         c.set(x / 20.0, 4.0 + x.to_radians().sin() * 4.0);
     }
     println!("{}", c.frame());
+    c.clear();
+
+    for x in (0..360).step_by(4) {
+        let x = x as f64;
+        c.set(x / 4.0, 30.0 + x.to_radians().sin() * 30.0);
+    }
+
+    for x in 0..30 {
+        for y in 0..30 {
+            let (x, y) = (x as f64, y as f64);
+            c.set(x, y);
+            c.toggle(x + 30.0, y + 30.0);
+            c.toggle(x + 60.0, y);
+        }
+    }
+    println!("{}", c.frame());
+    c.clear();
 }
