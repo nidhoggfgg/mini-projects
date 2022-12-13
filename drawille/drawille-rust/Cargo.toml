@@ -1,0 +1,13 @@
+[package]
+name = "drawille-rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "basic"
+path = "src/bin/basic.rs"
+
+[dependencies]
+terminal_size = "0.2"
