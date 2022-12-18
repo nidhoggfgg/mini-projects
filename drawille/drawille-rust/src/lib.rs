@@ -43,6 +43,7 @@ impl Canvas {
         Self { pixels }
     }
 
+    // I don't think safety needs to be explained here
     pub fn frame(&mut self) -> String {
         unsafe {
             self.pixels

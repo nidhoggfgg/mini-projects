@@ -3,6 +3,13 @@
 一些小的，简单的，适合初学者练手的项目来帮助初学者学习编程！
 所有本仓库内的项目都是非常简单的(复杂的部分会简化掉)，同时还有很多很好玩的小玩意！
 
+## [drawille](./drawille/README_cn.md) (Rust)
+
+一个 [drawille](https://github.com/asciimoo/drawille) 的复刻版，有些许增强。
+
+![cube.gif](./images/drawille/cube.gif)
+![basic.png](./images/drawille/basic.png)
+
 ## [甜甜圈](./donut/README_cn.md) (Rust)
 
 这是一个甜甜圈的复刻版本，以及一个增强版本 (支持多线程)。
