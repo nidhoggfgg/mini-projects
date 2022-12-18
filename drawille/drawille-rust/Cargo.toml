@@ -13,6 +13,10 @@ path = "src/bin/basic.rs"
 name = "turtle"
 path = "src/bin/turtle.rs"
 
+[[bin]]
+name = "cube"
+path = "src/bin/cube.rs"
+
 [dev-dependencies]
 criterion = "0.3"
 

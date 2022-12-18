@@ -1,11 +1,36 @@
 use std::cmp;
 
+// http://www.alanwood.net/unicode/braille_patterns.html
+// dots:
+//    ,___,
+//    |1 4|
+//    |2 5|
+//    |3 6|
+//    |7 8|
+//    `````
 #[rustfmt::skip]
 const PIXEL_MAP: [[u32; 2]; 4] = [[0x01, 0x08],
                                   [0x02, 0x10],
                                   [0x04, 0x20],
                                   [0x40, 0x80]];
+// braille unicode characters starts at 0x2800
 const BASE_CHAR: u32 = 0x2800;
+
+#[inline]
+fn get_pixel(x: f64, y: f64) -> u32 {
+    let (x, y) = (normalize(x), normalize(y));
+    PIXEL_MAP[y % 4][x % 2]
+}
+
+#[inline]
+fn get_pos(x: f64, y: f64) -> (usize, usize) {
+    (y.round() as usize / 4, x.round() as usize / 2)
+}
+
+#[inline]
+fn normalize(v: f64) -> usize {
+    v.round() as usize
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Canvas {
@@ -39,14 +64,14 @@ impl Canvas {
     pub fn set(&mut self, x: f64, y: f64) {
         let (row, col) = get_pos(x, y);
         self.pad_row_col(row, col);
-        let pixel = Self::get_pixel(x, y);
+        let pixel = get_pixel(x, y);
         self.pixels[row][col] |= pixel;
     }
 
     pub fn toggle(&mut self, x: f64, y: f64) {
         let (row, col) = get_pos(x, y);
         self.pad_row_col(row, col);
-        let pixel = Self::get_pixel(x, y);
+        let pixel = get_pixel(x, y);
         if self.pixels[row][col] & pixel != 0 {
             self.unset(x, y);
         } else {
@@ -57,10 +82,12 @@ impl Canvas {
     pub fn line(&mut self, x1: f64, y1: f64, x2: f64, y2: f64) {
         let (x1, y1) = (normalize(x1), normalize(y1));
         let (x2, y2) = (normalize(x2), normalize(y2));
-        let d = |v1, v2| if v1 <= v2 {
-            (v2 - v1, 1.0)
-        } else {
-            (v1 - v2, -1.0)
+        let d = |v1, v2| {
+            if v1 <= v2 {
+                (v2 - v1, 1.0)
+            } else {
+                (v1 - v2, -1.0)
+            }
         };
 
         let (xdiff, xdir) = d(x1, x2);
@@ -80,13 +107,8 @@ impl Canvas {
     fn unset(&mut self, x: f64, y: f64) {
         let (row, col) = get_pos(x, y);
         self.pad_row_col(row, col);
-        let pixel = Self::get_pixel(x, y);
+        let pixel = get_pixel(x, y);
         self.pixels[row][col] &= !(pixel as u8) as u32;
-    }
-
-    fn get_pixel(x: f64, y: f64) -> u32 {
-        let (x, y) = (normalize(x), normalize(y));
-        PIXEL_MAP[y % 4][x % 2]
     }
 
     fn pad_row_col(&mut self, row: usize, col: usize) {
@@ -122,7 +144,13 @@ pub struct Turtle {
 
 impl Turtle {
     pub fn new(pos_x: f64, pos_y: f64) -> Self {
-        Self { pos_x, pos_y, rotation: 0.0, brush_on: true, canvas: Canvas::new() }
+        Self {
+            pos_x,
+            pos_y,
+            rotation: 0.0,
+            brush_on: true,
+            canvas: Canvas::new(),
+        }
     }
 
     pub fn frame(&mut self) -> String {
@@ -169,10 +197,56 @@ impl Turtle {
     }
 }
 
-fn get_pos(x: f64, y: f64) -> (usize, usize) {
-    (y.round() as usize / 4, x.round() as usize / 2)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Point3D {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
-fn normalize(v: f64) -> usize {
-    v.round() as usize
+impl Point3D {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+
+    // see https://en.wikipedia.org/wiki/Rotation_matrix for more information
+    pub fn rotate_xyz(&mut self, anlge_x: f64, anlge_y: f64, angle_z: f64) {
+        // let (x, y, z) = (self.x, self.y, self.z);
+        // let (sx, cx) = anlge_x.to_radians().sin_cos();
+        // let (sy, cy) = anlge_y.to_radians().sin_cos();
+        // let (sz, cz) = angle_z.to_radians().sin_cos();
+        // let (t1, t2, t3) = (
+        //     x * cy + y * sx * sy + z * cx * sy,
+        //     y * cx - z * sx,
+        //     y * sx + z * cx,
+        // );
+        // self.x = cz * t1 - sz * t2;
+        // self.y = sz * t1 + cz * t2;
+        // self.z = cz * t3 - sy * x;
+
+        self.rotate_x(anlge_x);
+        self.rotate_y(anlge_y);
+        self.rotate_z(angle_z);
+    }
+
+    pub fn rotate_x(&mut self, angle: f64) {
+        let (s, c) = angle.to_radians().sin_cos();
+        let (y, z) = (self.y, self.z);
+        self.y = y * c - z * s;
+        self.z = y * s + z * c;
+    }
+
+    pub fn rotate_y(&mut self, angle: f64) {
+        let (s, c) = angle.to_radians().sin_cos();
+        let (x, z) = (self.x, self.z);
+        self.x = x * c + z * s;
+        self.z = -x * s + z * c;
+    }
+
+    pub fn rotate_z(&mut self, anlge: f64) {
+        let (s, c) = anlge.to_radians().sin_cos();
+        let (x, y) = (self.x, self.y);
+        self.x = x * c - y * s;
+        self.y = x * s + y * c;
+    }
 }
