@@ -64,19 +64,13 @@ impl Env {
     fn run_impl(&mut self, stmt: Stmt) -> Option<f64> {
         match stmt {
             Stmt::Fun { idx, body } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit fun define: {}", idx);
                 self.functions.insert(idx, body);
                 None
             }
             Stmt::Expr { expr } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit expression");
                 expr.value(self, None)
             }
             Stmt::Assign { idx, expr } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit variable assign: {}", idx);
                 let value = expr.value(self, None)?;
                 self.global.insert(idx, value);
                 None
@@ -105,13 +99,9 @@ impl Value for Valuable {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
             Self::Value(v) => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit value: {}", v);
                 Some(*v)
             }
             Self::Arg(i) => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit arg: {}", i);
                 if let Some(v) = locals?.get(*i) {
                     Some(*v)
                 } else {
@@ -120,8 +110,6 @@ impl Value for Valuable {
                 }
             }
             Self::Var(idx) => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit variable: {}", idx);
                 if let Some(v) = env.global.get(idx) {
                     Some(*v)
                 } else {
@@ -137,13 +125,9 @@ impl Value for Expr {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
             Expr::Literal { value } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit literal: {:?}", value);
                 value.value(env, locals)
             }
             Expr::Binary { left, op, right } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit binary: op: {:?}", op);
                 let lv = left.value(env, locals)?;
                 let rv = right.value(env, locals)?;
                 let result = match op {
@@ -156,8 +140,6 @@ impl Value for Expr {
                 Some(result)
             }
             Expr::Call { idx, args } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit call: {:?}", idx);
                 let mut ths_locals = Vec::new();
                 for e in args {
                     let v = e.value(env, locals)?;
@@ -178,8 +160,6 @@ impl Value for Expr {
                 }
             }
             Expr::Unary { op, operand } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit unary: op: {:?}", op);
                 let value = operand.value(env, locals)?;
                 let result = match op {
                     UnaryOp::Minus => -value,
@@ -188,8 +168,6 @@ impl Value for Expr {
                 Some(result)
             }
             Expr::Group { body } => {
-                #[cfg(feature = "runtime_dev")]
-                println!("visit group");
                 body.value(env, locals)
             }
         }

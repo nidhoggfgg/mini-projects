@@ -6,7 +6,10 @@ use crate::lexer::Token;
 use crate::utils::print_err;
 
 // this file is an impl of recursive descent parser
-// EBNF:
+// {} 0-inf times
+// [] 0 or 1 times
+// | or
+// () group
 // prog = { stmt }
 // stmt = fun | assign
 // fun = idx '(' {idx [',']} ')' = expr
@@ -15,10 +18,15 @@ use crate::utils::print_err;
 // plus_sub = { mult_div ('+'|'-') } mult_div
 // mult_div = { square ('*'|'/') } square
 // square = { minus '^' } minus
-// minus = ('-' minus) | factorial
+// minus = ( '-' minus ) | factorial
 // factorial = call ['!']
 // call = primary | idx '(' call {call} ')'
 // primary = idx | number | ( '(' expr ')' )
+//
+// from lexer
+// idx = hash(name)
+// name = ( '_' | 'a-z A-Z' ) { 'a-z A-Z 0=9' }
+// number = '0-9' { '0-9' } [ '.' { '0-9' } ]
 
 pub(crate) struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
