@@ -71,9 +71,6 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             return None;
         }
 
-        #[cfg(feature = "parser_dev")]
-        println!("{:#?}", stmt);
-
         stmt
     }
 

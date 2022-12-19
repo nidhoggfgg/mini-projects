@@ -67,9 +67,7 @@ impl Env {
                 self.functions.insert(idx, body);
                 None
             }
-            Stmt::Expr { expr } => {
-                expr.value(self, None)
-            }
+            Stmt::Expr { expr } => expr.value(self, None),
             Stmt::Assign { idx, expr } => {
                 let value = expr.value(self, None)?;
                 self.global.insert(idx, value);
@@ -98,9 +96,7 @@ trait Value {
 impl Value for Valuable {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
-            Self::Value(v) => {
-                Some(*v)
-            }
+            Self::Value(v) => Some(*v),
             Self::Arg(i) => {
                 if let Some(v) = locals?.get(*i) {
                     Some(*v)
@@ -113,7 +109,10 @@ impl Value for Valuable {
                 if let Some(v) = env.global.get(idx) {
                     Some(*v)
                 } else {
-                    print_err!("can't find variable named '{}'", env.find_name(*idx).unwrap_or("Unknown"));
+                    print_err!(
+                        "can't find variable named '{}'",
+                        env.find_name(*idx).unwrap_or("Unknown")
+                    );
                     None
                 }
             }
@@ -124,9 +123,7 @@ impl Value for Valuable {
 impl Value for Expr {
     fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
         match self {
-            Expr::Literal { value } => {
-                value.value(env, locals)
-            }
+            Expr::Literal { value } => value.value(env, locals),
             Expr::Binary { left, op, right } => {
                 let lv = left.value(env, locals)?;
                 let rv = right.value(env, locals)?;
@@ -155,7 +152,10 @@ impl Value for Expr {
                     let v = f(ths_locals[0]);
                     Some(v)
                 } else {
-                    print_err!("function {} is not defined", env.find_name(*idx).unwrap_or("Unknown"));
+                    print_err!(
+                        "function {} is not defined",
+                        env.find_name(*idx).unwrap_or("Unknown")
+                    );
                     None
                 }
             }
@@ -167,9 +167,7 @@ impl Value for Expr {
                 };
                 Some(result)
             }
-            Expr::Group { body } => {
-                body.value(env, locals)
-            }
+            Expr::Group { body } => body.value(env, locals),
         }
     }
 }
