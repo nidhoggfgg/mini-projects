@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::utils;
 
 #[derive(Clone, Debug)]
-pub enum Token {
+pub(crate) enum Token {
     LeftParen,
     RightParen,
     Plus,
@@ -21,26 +21,26 @@ pub enum Token {
     Eof,
 }
 
-pub struct Scanner<T: Iterator<Item = char>> {
+pub(crate) struct Scanner<T: Iterator<Item = char>> {
     source: T,
     next: Option<char>,
     kw: HashMap<&'static str, Token>,
-    var_name: HashMap<u64, String>,
+    namespace: HashMap<u64, String>,
 }
 
 impl<T: Iterator<Item = char>> Scanner<T> {
-    pub fn new(source: T) -> Self {
+    pub(crate) fn new(source: T) -> Self {
         let mut scanner = Scanner {
             source,
             next: None,
             kw: HashMap::from([("fun", Token::Fun)]),
-            var_name: HashMap::new(),
+            namespace: HashMap::new(),
         };
         scanner.eat();
         scanner
     }
 
-    pub fn scan(&mut self) -> Vec<Token> {
+    pub(crate) fn scan(&mut self) -> Vec<Token> {
         let mut tokens = Vec::with_capacity(16);
         while let Some(t) = self.scan_token() {
             tokens.push(t);
@@ -49,8 +49,8 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         tokens
     }
 
-    pub fn pop_var_name(&mut self) -> HashMap<u64, String> {
-        std::mem::take(&mut self.var_name)
+    pub(crate) fn pop_namespace(&mut self) -> HashMap<u64, String> {
+        std::mem::take(&mut self.namespace)
     }
 
     fn scan_token(&mut self) -> Option<Token> {
@@ -100,7 +100,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         }
 
         let hash = utils::hash_it(&lexeme);
-        self.var_name.insert(hash, lexeme);
+        self.namespace.insert(hash, lexeme);
         Token::Ident(hash)
     }
 

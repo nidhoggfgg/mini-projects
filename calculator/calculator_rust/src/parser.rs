@@ -32,6 +32,7 @@ pub(crate) struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
     next: Option<Token>,
     args: HashMap<u64, usize>,
+    namespace: Option<HashMap<u64, String>>,
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
@@ -40,6 +41,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             tokens,
             next: None,
             args: HashMap::new(),
+            namespace: None,
         };
 
         parser.eat();
@@ -47,7 +49,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     }
 
     pub(crate) fn parse(&mut self) -> Option<Box<Stmt>> {
-        let start = self.next().unwrap();
+        let start = self.next()?;
 
         let stmt = match start {
             Token::Fun => self.fun(),
@@ -67,11 +69,23 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         };
 
         if !self.expect(Token::Eof) {
-            print_err!("invalid syntax");
+            print_err!("invalid syntax, unknown where is end of input");
             return None;
         }
 
         stmt
+    }
+
+    pub(crate) fn push_namespace(&mut self, namespace: HashMap<u64, String>) {
+        self.namespace = Some(namespace);
+    }
+
+    pub(crate) fn pop_namespace(&mut self) -> HashMap<u64, String> {
+        if let Some(namespace) = self.namespace.take() {
+            namespace
+        } else {
+            HashMap::new()
+        }
     }
 
     fn assign(&mut self, start: Token) -> Option<Box<Stmt>> {
@@ -82,6 +96,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         self.eat();
 
         if self.is_at_end() {
+            print_err!("expect a expression after '='");
             return None;
         }
 
@@ -91,6 +106,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         let idx = if let Token::Ident(idx) = start {
             idx
         } else {
+            // never reach
             print_err!("expect a name but get {:?}, this is a bug!", start);
             return None;
         };
@@ -112,16 +128,21 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         };
 
         if !self.expect(Token::LeftParen) {
-            print_err!("expect '(' after '{}'", idx);
+            print_err!(
+                "expect '(' after '{}'",
+                self.find_name(idx).unwrap_or("Unknown")
+            );
             return None;
         }
 
         let mut count = 0;
+        // don't use while let, that will eat the self.next
         while self.check(Token::Ident(0)) {
             let idx = if let Some(Token::Ident(idx)) = self.next.take() {
                 self.eat();
                 idx
             } else {
+                // never reach
                 print_err!("expect a name, this is a bug!");
                 return None;
             };
@@ -267,6 +288,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             let idx = if let Token::Ident(idx) = start {
                 idx
             } else {
+                // never reach
                 print_err!("expect a name to call a function");
                 return None;
             };
@@ -324,6 +346,14 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 print_err!("invalid syntax");
                 None
             }
+        }
+    }
+
+    fn find_name(&self, idx: u64) -> Option<&str> {
+        if let Some(namespace) = &self.namespace {
+            namespace.get(&idx).map(|x| &**x)
+        } else {
+            None
         }
     }
 

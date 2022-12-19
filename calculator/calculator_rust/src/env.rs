@@ -11,7 +11,7 @@ pub struct Env {
     functions: HashMap<u64, Box<Expr>>,
     builtin: HashMap<u64, Box<dyn Fn(f64) -> f64>>,
     global: HashMap<u64, f64>,
-    var_name: Option<HashMap<u64, String>>,
+    name_space: Option<HashMap<u64, String>>,
 }
 
 impl Default for Env {
@@ -47,17 +47,19 @@ impl Env {
             functions: HashMap::new(),
             builtin,
             global,
-            var_name: None,
+            name_space: None,
         }
     }
 
     pub fn run(&mut self, s: &str) -> Option<f64> {
         let mut lexer = Scanner::new(s.chars());
         let tokens = lexer.scan();
-        let var_name = lexer.pop_var_name();
+        let namespace = lexer.pop_namespace();
         let mut parser = Parser::new(tokens.into_iter());
+        parser.push_namespace(namespace);
         let ast = parser.parse()?;
-        self.push_var_name(var_name);
+        let namespace = parser.pop_namespace();
+        self.push_namespace(namespace);
         self.run_impl(*ast)
     }
 
@@ -76,12 +78,12 @@ impl Env {
         }
     }
 
-    fn push_var_name(&mut self, var_name: HashMap<u64, String>) {
-        self.var_name = Some(var_name);
+    fn push_namespace(&mut self, namespace: HashMap<u64, String>) {
+        self.name_space = Some(namespace);
     }
 
     fn find_name(&self, idx: u64) -> Option<&str> {
-        if let Some(namespace) = &self.var_name {
+        if let Some(namespace) = &self.name_space {
             namespace.get(&idx).map(|x| &**x)
         } else {
             None
