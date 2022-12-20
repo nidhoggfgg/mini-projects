@@ -1,6 +1,6 @@
 use std::env;
 
-use convert_rust::convert;
+use convert::convert;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

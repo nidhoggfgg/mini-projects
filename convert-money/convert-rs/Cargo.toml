@@ -1,5 +1,5 @@
 [package]
-name = "convert_rust"
+name = "convert"
 version = "0.1.0"
 edition = "2021"
 
