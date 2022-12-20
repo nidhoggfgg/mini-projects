@@ -1,5 +1,5 @@
 [package]
-name = "framed_text"
+name = "framed"
 version = "0.1.0"
 edition = "2021"
 

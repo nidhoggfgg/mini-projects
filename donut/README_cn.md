@@ -44,13 +44,13 @@ let r=|xi,yi|{let(u,                 v)=(xi*c*n+yi*i,xi*g);
 这儿有一些例子:
 
 默认:
-![](./imgs/default.gif)
+![default.gif](../images/donut/default.gif)
 
 `--improve light`:
-![](./imgs/light.gif)
+![light.gif](../images/donut/light.gif)
 
 `--improve none --sample 20 15`
-![](./imgs/sample.gif)
+![sample.gif](../images/donut/sample.gif)
 
 另外，neodonut 还支持多线程计算，使用 `--thread <num>`。  
 该选项会取消掉渲染每一帧之间的时间间隔，在图像非常大时（超过 600*300）效果较好。

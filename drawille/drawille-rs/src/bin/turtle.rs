@@ -1,4 +1,4 @@
-use drawille_rust::Turtle;
+use drawille::Turtle;
 
 fn main() {
     let mut t = Turtle::new(100.0, 100.0);

@@ -1,4 +1,4 @@
-use drawille_rust::{Canvas, Point3D};
+use drawille::{Canvas, Point3D};
 
 // generate the vertices(6) of cube and sides(12) of cube
 // the sides contain the index of the vertice

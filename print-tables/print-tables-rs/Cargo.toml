@@ -1,5 +1,5 @@
 [package]
-name = "print-tables-rust"
+name = "print_table"
 version = "0.1.0"
 edition = "2021"
 

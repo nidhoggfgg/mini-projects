@@ -1,4 +1,4 @@
-use print_tables_rust::tables::Table;
+use print_table::tables::Table;
 
 fn main() {
     let header: Vec<String> = vec!["name", "age", "salary"]

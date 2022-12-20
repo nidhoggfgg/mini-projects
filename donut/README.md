@@ -50,13 +50,13 @@ And i also add a command line arg to change the number of samples.
 there is some example:
 
 no args:
-![](./imgs/default.gif)
+![default.gif](../images/donut/default.gif)
 
 with `--improve light`
-![](./imgs/light.gif)
+![light.gif](../images/donut/light.gif)
 
 with `--improve none --sample 20 15`
-![](./imgs/sample.gif)
+![sample.gif](../images/donut/sample.gif)
 
 btw, there is a really experimental args `--threads <num>`.  
 this arg indicate how many threads should be use, like 8 or 16.  

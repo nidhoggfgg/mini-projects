@@ -4,13 +4,13 @@ generator passwd and no need to remember it!
 
 for example:
 ```
-$ generator --auth OTZ --target facebook                                                                                                                       ✔ 
+$ generator --auth OTZ --target facebook
 -p-!zvtkctp.g!vy
-$ generator --auth OTZ --target google -d 24                                                                                                                   ✔ 
+$ generator --auth OTZ --target google -d 24
 bzkvl@i@dk!a_fi.ridyhta!
 
 # same args will generator same passwd
-$ generator --auth OTZ --target google -d 24                                                                                                                   ✔ 
+$ generator --auth OTZ --target google -d 24
 bzkvl@i@dk!a_fi.ridyhta!
 ```
 so, using this tool, you can never remember the passwd!

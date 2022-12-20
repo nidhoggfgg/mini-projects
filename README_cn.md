@@ -13,7 +13,7 @@
 ## [甜甜圈](./donut/README_cn.md) (Rust)
 
 这是一个甜甜圈的复刻版本，以及一个增强版本 (支持多线程)。
-![](./donut/donut_rust/imgs/default.gif)
+![default.gif](./images/donut/default.gif)
 
 ## [计算器](./calculator/README_cn.md) (Rust)
 
@@ -37,35 +37,35 @@
 一个 [termgraph](https://github.com/sgeisler/termgraph.git) 的复刻版，但是简化过了(简化了代码，没有简化功能)。
 python 的版本只包含 2 个主要的函数，还很简短也不复杂！
 
-![termgraph](./images/termgraph_colored.png)
+![termgraph](./images/termgraph-colored.png)
 
-## [文本加框](./framed_text/README.md) (Python, Rust)
+## [文本加框](./framed-text/README.md) (Python, Rust)
 
 将文本加上一个窗口，使得更加~~装逼~~引人注目
 
 ![framed-txt](./images/framed-text.png)
 
-## [字符表格](./print_tables/README.md) (Python, Rust)
+## [字符表格](./print-tables/README.md) (Python, Rust)
 
 将数据展示为表格的形式并且不需要图形化界面，更好的~~装逼~~展示数据
 可以看作是 [rich](https://github.com/Textualize/rich) 中 table 模块的一个简化，但两者并不相同
 
 ![print-tables](./images/print-tables.png)
 
-## [打印树型结构](./tree_printer/README.md) (Python, Rust)
+## [打印树型结构](./tree-printer/README.md) (Python, Rust)
 
 将树型的结构(目录等)打印为易懂的形式，更好的~~装逼~~查看树型结构
 实现所用的算法并不复杂，只有简短的几行，递归实现
 
 ![tree-printer](./images/tree-printer.png)
 
-## [盲水印](./blind_watermark/README_cn.md) (Python)
+## [盲水印](./blind-watermark/README_cn.md) (Python)
 
 将“看不见”的信息放入到任何内容内(图片，文字...)！
 
 ![hide-text](./images/blind-watermark-text.png)
 
-## [金钱格式转化](./convert_money/README_cn.md) (Python, Rust)
+## [金钱格式转化](./convert-money/README_cn.md) (Python, Rust)
 
 将数字转化为正规的金额表示方式
 

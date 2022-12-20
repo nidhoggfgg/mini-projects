@@ -1,5 +1,5 @@
 [package]
-name = "drawille-rust"
+name = "drawille"
 version = "0.1.0"
 edition = "2021"
 
@@ -21,5 +21,5 @@ path = "src/bin/cube.rs"
 criterion = "0.3"
 
 [[bench]]
-name = "speed_test"
+name = "speed-test"
 harness = false

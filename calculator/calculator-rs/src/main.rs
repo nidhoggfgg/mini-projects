@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use calculator_rust::Env;
+use calculator::Env;
 
 fn main() {
     let mut env = Env::new();

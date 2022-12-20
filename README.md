@@ -16,7 +16,7 @@ a copy version of [drawille](https://github.com/asciimoo/drawille), but improved
 
 a donut re-impl and enhanced version (support multi-threads).  
 a sample:
-![default.gif](./donut/donut_rust/imgs/default.gif)
+![default.gif](./images/donut/default.gif)
 
 ## [calculator](./calculator/README.md) (Rust)
 
@@ -40,9 +40,9 @@ pls see this example
 a hack version of [termgraph](https://github.com/sgeisler/termgraph.git)
 but simplified!
 
-![termgraph.png](./images/termgraph_colored.png)
+![termgraph.png](./images/termgraph-colored.png)
 
-## [framed-text](./framed_text/README.md) (Python, Rust)
+## [framed-text](./framed-text/README.md) (Python, Rust)
 
 add frame to text. make text more attractive!
 
@@ -55,7 +55,7 @@ like the [tables in rich](https://github.com/Textualize/rich), but more simple a
 
 ![print-tables.png](./images/print-tables.png)
 
-## [tree-printer](./tree_printer/README.md) (Python)
+## [tree-printer](./tree-printer/README.md) (Python)
 
 print the tree structure in visual way!
 only few line, recursive, simple, and easy to understand!

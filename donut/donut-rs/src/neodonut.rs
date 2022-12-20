@@ -1,6 +1,6 @@
 use std::process;
 
-use donut_rust::{render, render_fast, Imp};
+use neodonut::{render, render_fast, Imp};
 
 fn main() {
     let (imp, sample, threads) = deal_args();

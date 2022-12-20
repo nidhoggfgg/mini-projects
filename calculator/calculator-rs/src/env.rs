@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use drawille_rust::Canvas;
+use drawille::Canvas;
 
 use crate::{
     ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicKind},

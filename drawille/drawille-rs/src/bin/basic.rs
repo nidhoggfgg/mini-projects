@@ -1,4 +1,4 @@
-use drawille_rust::Canvas;
+use drawille::Canvas;
 
 fn main() {
     let mut c = Canvas::new();

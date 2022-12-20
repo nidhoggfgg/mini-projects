@@ -1,7 +1,7 @@
 use std::{env, error::Error, path::Path, process};
 
 use csv::ReaderBuilder;
-use termgraph_rust::{Candle, CandleStickGraph};
+use termgraph::{Candle, CandleStickGraph};
 
 fn main() {
     let args: Vec<String> = env::args().collect();

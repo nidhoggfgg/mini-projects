@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use drawille_rust::Canvas;
+use drawille::Canvas;
 
 fn render_10000(size: i32) {
     let mut c = Canvas::new();
