@@ -1,18 +1,30 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Stmt {
     Fun { idx: u64, body: Box<Expr> },
     Assign { idx: u64, expr: Box<Expr> },
     Expr { expr: Box<Expr> },
+    Magic { kind: MagicKind },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub(crate) enum MagicKind {
+    Plot(u64, Box<Expr>, Box<Expr>, Box<Expr>),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum MagicArg {
+    Idx,
+    Expr
+}
+
+#[derive(Debug, Clone)]
 pub(crate) enum Valuable {
     Value(f64), // normal number
     Arg(usize), // arg in function
     Var(u64),   // variable
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Expr {
     Literal {
         value: Valuable,
@@ -35,13 +47,13 @@ pub(crate) enum Expr {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum UnaryOp {
     Minus,
     Ftl,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum BinaryOp {
     Plus,
     Sub,

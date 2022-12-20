@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::utils;
+use crate::utils::{self, is_identifier_continue};
 
 #[derive(Clone, Debug)]
 pub(crate) enum Token {
@@ -14,6 +14,7 @@ pub(crate) enum Token {
     Square,
     Comma,
     Eq,
+    Percent,
     Fun,
     Number(f64),
     Ident(u64),
@@ -74,6 +75,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             '^' => Token::Square,
             '=' => Token::Eq,
             ',' => Token::Comma,
+            '%' => Token::Percent,
             '0'..='9' => self.number(c),
             _ => Token::Unknown,
         };
@@ -86,7 +88,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         lexeme.push(start);
 
         while let Some(c) = self.next {
-            if c.is_alphanumeric() {
+            if is_identifier_continue(c) {
                 lexeme.push(c);
                 self.eat();
             } else {

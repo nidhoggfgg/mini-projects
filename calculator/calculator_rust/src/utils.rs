@@ -5,6 +5,10 @@ pub(crate) fn is_identifier_start(c: char) -> bool {
     c == '_' || c.is_alphabetic()
 }
 
+pub(crate) fn is_identifier_continue(c: char) -> bool {
+    is_identifier_start(c) || is_number(c)
+}
+
 pub(crate) fn is_number(c: char) -> bool {
     ('0'..='9').contains(&c)
 }

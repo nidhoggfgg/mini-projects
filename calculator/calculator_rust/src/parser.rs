@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::mem::discriminant;
 
-use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable};
+use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicArg, MagicKind};
 use crate::lexer::Token;
-use crate::utils::print_err;
+use crate::utils::{print_err, hash_it};
 
 // this file is an impl of recursive descent parser
 // {} 0-inf times
@@ -11,7 +11,8 @@ use crate::utils::print_err;
 // | or
 // () group
 // prog = { stmt }
-// stmt = fun | assign
+// stmt = fun | assign | magic
+// magic = '%' idx '(' { ( idx | expr ) } ')'
 // fun = idx '(' {idx [',']} ')' = expr
 // assign = expr | (idx '=' expr)
 // expr = plus_sub
@@ -32,6 +33,7 @@ pub(crate) struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
     next: Option<Token>,
     args: HashMap<u64, usize>,
+    magic: HashMap<u64, Vec<MagicArg>>,
     namespace: Option<HashMap<u64, String>>,
 }
 
@@ -41,8 +43,10 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             tokens,
             next: None,
             args: HashMap::new(),
+            magic: HashMap::new(),
             namespace: None,
         };
+        parser.magic_plot();
 
         parser.eat();
         parser
@@ -54,6 +58,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         let stmt = match start {
             Token::Fun => self.fun(),
             Token::Ident(_) => self.assign(start),
+            Token::Percent => self.magic(),
             Token::Eof => {
                 return None;
             }
@@ -85,6 +90,76 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             namespace
         } else {
             HashMap::new()
+        }
+    }
+
+    fn magic(&mut self) -> Option<Box<Stmt>> {
+        if self.is_at_end() {
+            print_err!("expect a name after 'fun'");
+            return None;
+        }
+
+        let magic_name = if let Some(Token::Ident(idx)) = self.next() {
+            idx
+        } else {
+            print_err!("expect a name after '%'");
+            return None;
+        };
+
+        if !self.expect(Token::LeftParen) {
+            print_err!(
+                "expect '(' after '{}'",
+                self.find_name(magic_name).unwrap_or("Unknown")
+            );
+            return None;
+        }
+
+        let (mut idxs, mut exprs) = (Vec::new(), Vec::new());
+        let magic = self.magic.clone();
+        if let Some(args) = magic.get(&magic_name) {
+            for arg in args {
+                match arg {
+                    MagicArg::Idx => {
+                        if let Some(Token::Ident(idx)) = self.next() {
+                            idxs.push(idx);
+                        } else {
+                            print_err!("expect a name in magic function arg");
+                            return None;
+                        };
+                    }
+                    MagicArg::Expr => {
+                        let t = self.next()?;
+                        let expr = self.expr(t)?;
+                        exprs.push(expr);
+                    }
+                }
+                if self.check(Token::Comma) {
+                    self.eat();
+                }
+            }
+        } else {
+            print_err!("can't find magic function named: {}", self.find_name(magic_name).unwrap_or("Unknown"));
+            return None;
+        };
+
+        if !self.expect(Token::RightParen) {
+            print_err!("missing ')'");
+            return None;
+        }
+
+        match magic_name {
+            p if p == hash_it(&"plot2d") => {
+                if idxs.len() != 1 || exprs.len() != 3 {
+                    print_err!("magic function plot2d need 4 args: function name, start, end, step");
+                    return None;
+                }
+
+                let expr3 = exprs.pop().unwrap();
+                let expr2 = exprs.pop().unwrap();
+                let expr1 = exprs.pop().unwrap();
+                Some(Box::new(Stmt::Magic { kind: MagicKind::Plot(idxs[0], expr1, expr2, expr3) }))
+            }
+            _ => None // impossible
         }
     }
 
@@ -347,6 +422,12 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 None
             }
         }
+    }
+
+    fn magic_plot(&mut self) {
+        let args = vec![MagicArg::Idx, MagicArg::Expr, MagicArg::Expr, MagicArg::Expr];
+        let hash = hash_it(&"plot2d");
+        self.magic.insert(hash, args);
     }
 
     fn find_name(&self, idx: u64) -> Option<&str> {
