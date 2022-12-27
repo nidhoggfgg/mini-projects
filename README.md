@@ -2,12 +2,13 @@
 
 [中文](./README_cn.md)
 
-some practical, mini and easy projects to help beginner used to writing code!  
+some practical, mini and easy projects to help beginner used to writing code!
 all the projects is for study and practice not for product!
+every project is small(less than 1000 loc) and easy to understand.
 
 ## [drawille](./drawille/README.md) (Rust)
 
-a copy version of [drawille](https://github.com/asciimoo/drawille), but improved some thing.
+a copy version of [drawille](https://github.com/asciimoo/drawille).
 
 ![cube.gif](./images/drawille/cube.gif)
 ![basic.png](./images/drawille/basic.png)
@@ -22,7 +23,6 @@ a sample:
 
 a simple but powerful calculator  
 pls see this example
-
 ```
 >>> 12.34 * 45.67 + 6! / 2^4
 608.5678
@@ -32,6 +32,8 @@ pls see this example
 5.003415549553682
 >>>
 ```
+and it support a magic function plot:
+![magic-plot.png](./images/calc-magic-plot2d.png)
 
 **note: it is in dev, some thing will change**
 
