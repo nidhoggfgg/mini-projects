@@ -14,30 +14,22 @@ def read_lines(file_name):
 
 def get_max_widths(lines):
     """find the max width of a list"""
-    max_width = len(lines[0])
-    for line in lines:
-        if len(line) > max_width:
-            max_width = len(line)
-
-    return max_width
+    return max([len(line) for line in lines])
 
 
 def gen_header(title, max_widths, frame_char):
     """generate the frame's head"""
     left, right, h, v = frame_char
-
     header = []
     header1 = f"{left}{h*(max_widths+5)}{right}"
     header2 = f"{v} {title:{max_widths-3}} - □ x {v}"
     header.append(header1)
     header.append(header2)
-
     return header
 
 
 def gen_frame(lines, max_widths, frame_char):
     """generate framed str"""
-
     # l: left, r: right, t: top, b: bottom, h: horizon, v: vertical
     lt, rt, lb, rb, h, v = frame_char
     max_widths += 5
