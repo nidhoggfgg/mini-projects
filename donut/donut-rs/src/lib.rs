@@ -1,6 +1,7 @@
 use rand::Rng;
 use std::f64::consts::{PI, SQRT_2};
 use std::sync::{mpsc, Arc, Mutex};
+use std::time::Instant;
 use std::{fmt, thread, time};
 use terminal_size::{terminal_size, Height, Width};
 
@@ -56,13 +57,19 @@ pub fn render_fast(color: (u8, u8, u8), imp: Imp, smp: Option<(f64, f64)>, threa
     }
 
     println!("\x1B[2J");
+
     for (s, wh) in rx {
+        let now = Instant::now();
         let (w, h) = get_term_size();
         if w + h != wh {
             continue;
         }
 
         println!("\x1B[?25l{}\x1B[?25h", s);
+        // dont remove the space after fps
+        // when "12fps" print after "321fps", the "12fps" will looks like "121fps", that's wrong
+        // just add some invisiable space to fix it :)
+        println!("{}fps   ", 1000000 / now.elapsed().as_micros());
     }
 }
 
@@ -80,6 +87,7 @@ pub fn render(color: (u8, u8, u8), imp: Imp, sleep_time: u64, smp: Option<(f64, 
     // clear screen
     println!("\x1B[2J");
     loop {
+        let now = Instant::now();
         if let Some((w, h)) = listen_term_change((width, height)) {
             (k1, sample) = init_param!(w, h, width, sample);
             println!("\x1B[2J");
@@ -96,7 +104,11 @@ pub fn render(color: (u8, u8, u8), imp: Imp, sleep_time: u64, smp: Option<(f64, 
 
         // print whole graph
         println!("\x1B[?25l{}\x1B[?25h", s);
-
+        // dont remove the space after fps
+        // when "12fps" print after "321fps", the "12fps" will looks like "121fps", that's wrong
+        // just add some invisiable space to fix it :)
+        println!("{}fps   ", 1000000 / now.elapsed().as_micros());
+        
         // prepare for the next loop
         thread::sleep(time::Duration::from_millis(sleep_time));
         char_seq = gen_char_seq(&mut color, imp);

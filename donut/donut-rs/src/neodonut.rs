@@ -22,10 +22,10 @@ fn deal_args() -> (Imp, Option<(f64, f64)>, usize) {
             r#"
     usage: neodonut [--improve <color|light|none>] [--sample <t> <p>] [--threads <num>]
         --improve    color: render donut with color and light
-                        light: render donut only with light improvment
-                        none: render donut just use ascii char without color and light improve.
+                     light: render donut only with light improvment
+                     none: render donut just use ascii char without color and light
         --sample     t: sample of the theta
-                        p: sample of the phi
+                     p: sample of the phi
         --threads    num: use how many threads to calc and print (default 1)
         "#
         );
