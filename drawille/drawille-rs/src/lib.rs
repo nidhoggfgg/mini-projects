@@ -43,6 +43,11 @@ impl Canvas {
         Self { pixels }
     }
 
+    pub fn with_capcity(width: usize, height: usize) -> Self {
+        let pixels = vec![vec![0; width]; height];
+        Self { pixels }
+    }
+
     // I don't think safety needs to be explained here
     pub fn frame(&mut self) -> String {
         unsafe {
@@ -59,6 +64,12 @@ impl Canvas {
     }
 
     pub fn clear(&mut self) {
+        let width = self.get_width();
+        let height = self.get_height();
+        self.pixels = vec![vec![0; width]; height];
+    }
+
+    pub fn del_new(&mut self) {
         self.pixels = Vec::new();
     }
 
@@ -112,25 +123,33 @@ impl Canvas {
         self.pixels[row][col] &= !(pixel as u8) as u32;
     }
 
+    // +-+    +--+    +--+
+    // | | -> |  | -> |  |
+    // +-+    +--+    |  |
+    //                +--+
     fn pad_row_col(&mut self, row: usize, col: usize) {
-        if row >= self.pixels.len() {
-            self.pad_row(row);
+        if self.get_width() <= col {
+            for r in &mut self.pixels {
+                let pad_num = col - r.len() + 1;
+                r.append(&mut vec![0; pad_num]);
+            }
         }
-        if col >= self.pixels[row].len() {
-            self.pad_col(row, col);
+
+        if self.get_height() <= row {
+            let pad_num = row - self.get_height() + 1;
+            let mut pad = vec![vec![0; col+1]; pad_num];
+            self.pixels.append(&mut pad);
         }
     }
 
-    fn pad_row(&mut self, row: usize) {
-        let pad_num = row - self.pixels.len() + 1;
-        let mut pad = vec![vec![0; 10]; pad_num];
-        self.pixels.append(&mut pad);
+    #[inline]
+    fn get_width(&self) -> usize {
+        self.pixels.iter().map(|l| l.len()).max().unwrap_or(0)
     }
 
-    fn pad_col(&mut self, row: usize, col: usize) {
-        let pad_num = col - self.pixels[row].len() + 1;
-        let mut pad = vec![0; pad_num];
-        self.pixels[row].append(&mut pad);
+    #[inline]
+    fn get_height(&self) -> usize {
+        self.pixels.len()
     }
 }
 

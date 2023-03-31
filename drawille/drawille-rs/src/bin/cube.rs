@@ -39,11 +39,15 @@ fn gen_cube(side_len: f64) -> ([Point3D; 8], [(usize, usize); 12]) {
     )
 }
 
+// just make the rotate looks more "random"
 fn gen_rotate(k: i32) -> (f64, f64, f64) {
-    if k % 2 == 0 {
-        (1.0, 2.0, 4.0)
-    } else {
-        (2.0, 3.0, 5.0)
+    match k {
+        k if k % 2 == 0 => (1.0, 2.0, 3.0),
+        k if k % 3 == 0 => (1.0, 3.0, 2.0),
+        k if k % 5 == 0 => (2.0, 1.0, 3.0),
+        k if k % 7 == 0 => (2.0, 3.0, 1.0),
+        k if k % 11 == 0 => (3.0, 2.0, 1.0),
+        _ => (3.0, 1.0, 2.0)
     }
 }
 
@@ -56,8 +60,6 @@ fn main() {
     println!("\x1B[?25l");
     loop {
         let (rx, ry, rz) = gen_rotate(k);
-        // clean screen & move cursor to (0, 0)
-        println!("\x1B[2J\x1B[H");
         for v in &mut vertices {
             v.rotate_xyz(rx, ry, rz);
         }
@@ -69,7 +71,7 @@ fn main() {
             c.line(x1, y1, x2, y2);
         }
 
-        println!("{}", c.frame());
+        println!("\x1B[H{}", c.frame());
         c.clear();
         std::thread::sleep(std::time::Duration::from_millis(32));
         k += 1;
