@@ -1,3 +1,4 @@
+// todo: the impl of vm-like env is really complicated.
 use std::collections::HashMap;
 
 use drawille::Canvas;
@@ -7,41 +8,52 @@ use crate::{
     lexer::Scanner,
     parser::Parser,
     utils::{factorial, hash_it, print_err},
+    onemore::OneMore,
 };
+
+
+macro_rules! f64method_to_native {
+    ($name:tt) => {
+        NativeFun {
+            fun: Box::new(|arg:&[f64]| OneMore::One(f64::$name(arg[0]))),
+            arg_num: 1,
+            return_num: 1,
+        }    
+    };
+}
+
+#[allow(unused)]
+struct NativeFun {
+    fun: Box<dyn Fn(&[f64]) -> OneMore>,
+    arg_num: usize,
+    return_num: usize,
+}
 
 pub struct Env {
     functions: HashMap<u64, Box<Expr>>,
-    builtin: HashMap<u64, Box<dyn Fn(f64) -> f64>>,
+    builtin: HashMap<u64, NativeFun>,
     global: HashMap<u64, f64>,
     name_space: Option<HashMap<u64, String>>,
-}
-
-impl Default for Env {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Env {
     pub fn new() -> Self {
         let builtin = HashMap::from([
-            (hash_it(&"ln"), Box::new(f64::ln) as Box<_>),
-            (hash_it(&"lg"), Box::new(f64::log10) as Box<_>),
-            (hash_it(&"sin"), Box::new(f64::sin) as Box<_>),
-            (hash_it(&"cos"), Box::new(f64::cos) as Box<_>),
-            (hash_it(&"tan"), Box::new(f64::tan) as Box<_>),
-            (hash_it(&"acos"), Box::new(f64::acos) as Box<_>),
-            (hash_it(&"asin"), Box::new(f64::asin) as Box<_>),
-            (hash_it(&"atan"), Box::new(f64::atan) as Box<_>),
-            (hash_it(&"sqrt"), Box::new(f64::sqrt) as Box<_>),
-            (hash_it(&"abs"), Box::new(f64::abs) as Box<_>),
-            (hash_it(&"sinh"), Box::new(f64::sinh) as Box<_>),
-            (hash_it(&"cosh"), Box::new(f64::cosh) as Box<_>),
-            (hash_it(&"cosh"), Box::new(f64::cosh) as Box<_>),
-            (hash_it(&"floor"), Box::new(f64::floor) as Box<_>),
-            (hash_it(&"to_rad"), Box::new(f64::to_radians) as Box<_>),
+            (hash_it(&"ln"), f64method_to_native!(ln)),
+            (hash_it(&"lg"), f64method_to_native!(log10)),
+            (hash_it(&"sin"), f64method_to_native!(sin)),
+            (hash_it(&"cos"), f64method_to_native!(cos)),
+            (hash_it(&"tan"), f64method_to_native!(tan)),
+            (hash_it(&"acos"), f64method_to_native!(acos)),
+            (hash_it(&"asin"), f64method_to_native!(asin)),
+            (hash_it(&"atan"), f64method_to_native!(atan)),
+            (hash_it(&"sqrt"), f64method_to_native!(sqrt)),
+            (hash_it(&"abs"),   f64method_to_native!(abs)),
+            (hash_it(&"sinh"),  f64method_to_native!(sinh)),
+            (hash_it(&"cosh"),  f64method_to_native!(cosh)),
+            (hash_it(&"floor"), f64method_to_native!(floor)),
+            (hash_it(&"to_rad"),f64method_to_native!(to_radians)),
         ]);
-
         let global = HashMap::from([
             (hash_it(&"PI"), std::f64::consts::PI),
             (hash_it(&"E"), std::f64::consts::E),
@@ -54,7 +66,7 @@ impl Env {
         }
     }
 
-    pub fn run(&mut self, s: &str) -> Option<f64> {
+    pub fn run(&mut self, s: &str) -> Option<OneMore> {
         let mut lexer = Scanner::new(s.chars());
         let tokens = lexer.scan();
         let namespace = lexer.pop_namespace();
@@ -66,7 +78,7 @@ impl Env {
         self.run_impl(*ast)
     }
 
-    fn run_impl(&mut self, stmt: Stmt) -> Option<f64> {
+    fn run_impl(&mut self, stmt: Stmt) -> Option<OneMore> {
         match stmt {
             Stmt::Fun { idx, body } => {
                 self.functions.insert(idx, body);
@@ -74,20 +86,20 @@ impl Env {
             }
             Stmt::Expr { expr } => expr.value(self, None),
             Stmt::Assign { idx, expr } => {
-                let value = expr.value(self, None)?;
+                let value = expr.value(self, None)?.one()?;
                 self.global.insert(idx, value);
                 None
             }
             Stmt::Magic { kind } => {
                 match kind {
-                    MagicKind::Plot(idx, e1, e2, e3) => {
+                    MagicKind::Plot2d(idx, e1, e2, e3) => {
                         if let Some((_, body)) = self.functions.get_key_value(&idx) {
                             let mut c = Canvas::new();
-                            let mut x = e1.value(self, None)?;
-                            let end = e2.value(self, None)?;
-                            let step = e3.value(self, None)?;
+                            let mut x = e1.value(self, None)?.one()?;
+                            let end = e2.value(self, None)?.one()?;
+                            let step = e3.value(self, None)?.one()?;
                             while x < end {
-                                let y = body.value(self, Some(&[x]))?;
+                                let y = body.value(self, Some(&[x]))?.one()?;
                                 c.set(x, y);
                                 x += step;
                             }
@@ -117,16 +129,16 @@ impl Env {
 }
 
 trait Value {
-    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64>;
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<OneMore>;
 }
 
 impl Value for Valuable {
-    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<OneMore> {
         match self {
-            Self::Value(v) => Some(*v),
+            Self::Value(v) => Some(OneMore::One(*v)),
             Self::Arg(i) => {
                 if let Some(v) = locals?.get(*i) {
-                    Some(*v)
+                    Some(OneMore::One(*v))
                 } else {
                     print_err!("too little values give");
                     None
@@ -134,7 +146,7 @@ impl Value for Valuable {
             }
             Self::Var(idx) => {
                 if let Some(v) = env.global.get(idx) {
-                    Some(*v)
+                    Some(OneMore::One(*v))
                 } else {
                     print_err!(
                         "can't find variable named '{}'",
@@ -148,12 +160,12 @@ impl Value for Valuable {
 }
 
 impl Value for Expr {
-    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<f64> {
+    fn value(&self, env: &Env, locals: Option<&[f64]>) -> Option<OneMore> {
         match self {
             Expr::Literal { value } => value.value(env, locals),
             Expr::Binary { left, op, right } => {
-                let lv = left.value(env, locals)?;
-                let rv = right.value(env, locals)?;
+                let lv = left.value(env, locals)?.one()?;
+                let rv = right.value(env, locals)?.one()?;
                 let result = match op {
                     BinaryOp::Plus => lv + rv,
                     BinaryOp::Sub => lv - rv,
@@ -161,22 +173,22 @@ impl Value for Expr {
                     BinaryOp::Div => lv / rv,
                     BinaryOp::Square => lv.powf(rv),
                 };
-                Some(result)
+                Some(OneMore::One(result))
             }
             Expr::Call { idx, args } => {
                 let mut this_locals = Vec::new();
                 for e in args {
-                    let v = e.value(env, locals)?;
+                    let v = e.value(env, locals)?.one()?;
                     this_locals.push(v);
                 }
                 if let Some((_, body)) = env.functions.get_key_value(idx) {
                     body.value(env, Some(&this_locals))
                 } else if let Some((_, f)) = env.builtin.get_key_value(idx) {
-                    if this_locals.len() != 1 {
-                        print_err!("need and only need 1 argument");
+                    if this_locals.len() != f.arg_num {
+                        print_err!("expect {} arguments, but get {}", f.arg_num, this_locals.len());
                         return None;
                     }
-                    let v = f(this_locals[0]);
+                    let v = (f.fun)(&this_locals);
                     Some(v)
                 } else {
                     print_err!(
@@ -187,14 +199,20 @@ impl Value for Expr {
                 }
             }
             Expr::Unary { op, operand } => {
-                let value = operand.value(env, locals)?;
+                let value = operand.value(env, locals)?.one()?;
                 let result = match op {
                     UnaryOp::Minus => -value,
                     UnaryOp::Ftl => factorial(value as u32),
                 };
-                Some(result)
+                Some(OneMore::One(result))
             }
             Expr::Group { body } => body.value(env, locals),
         }
+    }
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self::new()
     }
 }

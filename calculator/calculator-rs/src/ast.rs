@@ -8,13 +8,7 @@ pub(crate) enum Stmt {
 
 #[derive(Debug, Clone)]
 pub(crate) enum MagicKind {
-    Plot(u64, Box<Expr>, Box<Expr>, Box<Expr>),
-}
-
-#[derive(Debug, Clone)]
-pub(crate) enum MagicArg {
-    Idx,
-    Expr
+    Plot2d(u64, Box<Expr>, Box<Expr>, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]

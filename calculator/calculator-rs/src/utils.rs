@@ -31,7 +31,7 @@ pub(crate) fn factorial(num: u32) -> f64 {
 
 pub(crate) fn hash_it<T>(v: &T) -> u64
 where
-    T: Hash,
+    T: Hash + ?Sized,
 {
     let mut hasher = DefaultHasher::new();
     v.hash(&mut hasher);

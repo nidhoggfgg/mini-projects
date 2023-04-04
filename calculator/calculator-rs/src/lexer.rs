@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::utils::{self, is_identifier_continue};
+use crate::utils;
 
 #[derive(Clone, Debug)]
 pub(crate) enum Token {
@@ -18,7 +18,7 @@ pub(crate) enum Token {
     Fun,
     Number(f64),
     Ident(u64),
-    Unknown,
+    Unknown(u64), // String is great, but it need more space
     Eof,
 }
 
@@ -77,7 +77,10 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             ',' => Token::Comma,
             '%' => Token::Percent,
             '0'..='9' => self.number(c),
-            _ => Token::Unknown,
+            c @ _ => {
+                let hash = self.get_hash(&c.to_string());
+                Token::Unknown(hash)
+            },
         };
 
         Some(token)
@@ -88,7 +91,7 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         lexeme.push(start);
 
         while let Some(c) = self.next {
-            if is_identifier_continue(c) {
+            if utils::is_identifier_continue(c) {
                 lexeme.push(c);
                 self.eat();
             } else {
@@ -121,6 +124,12 @@ impl<T: Iterator<Item = char>> Scanner<T> {
         if let Some('.') = self.next {
             self.eat();
             lexeme.push('.');
+            if let Some(c) = self.next {
+                if !utils::is_number(c) {
+                    let hash = self.get_hash(&lexeme);
+                    return Token::Unknown(hash);
+                }
+            }
 
             while let Some(c) = self.next {
                 if utils::is_number(c) {
@@ -134,6 +143,12 @@ impl<T: Iterator<Item = char>> Scanner<T> {
 
         let value = lexeme.parse().unwrap();
         Token::Number(value)
+    }
+
+    fn get_hash(&mut self, lexme: &str) -> u64 {
+        let hash = utils::hash_it(lexme);
+        self.namespace.insert(hash, lexme.to_owned());
+        hash
     }
 
     fn skip_space(&mut self) {

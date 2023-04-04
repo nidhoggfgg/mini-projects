@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::mem::discriminant;
 
-use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicArg, MagicKind};
+use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicKind};
 use crate::lexer::Token;
 use crate::utils::{print_err, hash_it};
 
@@ -27,7 +27,7 @@ use crate::utils::{print_err, hash_it};
 // from lexer
 // idx = hash(name)
 // name = ( '_' | 'a-z A-Z' ) { 'a-z A-Z 0=9' }
-// number = '0-9' { '0-9' } [ '.' { '0-9' } ]
+// number = '0-9' { '0-9' } [ '.' '0-9' { '0-9' } ]
 
 pub(crate) struct Parser<T: Iterator<Item = Token>> {
     tokens: T,
@@ -35,6 +35,12 @@ pub(crate) struct Parser<T: Iterator<Item = Token>> {
     args: HashMap<u64, usize>,
     magic: HashMap<u64, Vec<MagicArg>>,
     namespace: Option<HashMap<u64, String>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum MagicArg {
+    Idx,
+    Expr
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
@@ -62,8 +68,9 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             Token::Eof => {
                 return None;
             }
-            Token::Unknown => {
-                print_err!("invalid char");
+            Token::Unknown(id) => {
+                let lexme = self.find_name(id).unwrap_or("");
+                print_err!("invalid syntax: {}", lexme);
                 None
             }
             _ => {
@@ -157,7 +164,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 let expr3 = exprs.pop().unwrap();
                 let expr2 = exprs.pop().unwrap();
                 let expr1 = exprs.pop().unwrap();
-                Some(Box::new(Stmt::Magic { kind: MagicKind::Plot(idxs[0], expr1, expr2, expr3) }))
+                Some(Box::new(Stmt::Magic { kind: MagicKind::Plot2d(idxs[0], expr1, expr2, expr3) }))
             }
             _ => None // impossible
         }
