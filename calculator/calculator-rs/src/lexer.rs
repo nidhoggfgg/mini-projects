@@ -18,7 +18,7 @@ pub(crate) enum Token {
     Fun,
     Number(f64),
     Ident(u64),
-    Unknown(u64), // String is great, but it need more space
+    Unknown(u64),
     Eof,
 }
 
@@ -77,10 +77,10 @@ impl<T: Iterator<Item = char>> Scanner<T> {
             ',' => Token::Comma,
             '%' => Token::Percent,
             '0'..='9' => self.number(c),
-            c @ _ => {
+            c => {
                 let hash = self.get_hash(&c.to_string());
                 Token::Unknown(hash)
-            },
+            }
         };
 
         Some(token)

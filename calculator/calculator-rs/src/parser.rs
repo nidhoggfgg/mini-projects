@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::mem::discriminant;
 
-use crate::ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicKind};
+use crate::ast::{BinaryOp, Expr, MagicKind, Stmt, UnaryOp, Valuable};
 use crate::lexer::Token;
-use crate::utils::{print_err, hash_it};
+use crate::utils::{hash_it, print_err};
 
 // this file is an impl of recursive descent parser
 // {} 0-inf times
@@ -18,8 +18,8 @@ use crate::utils::{print_err, hash_it};
 // expr = plus_sub
 // plus_sub = { mult_div ('+'|'-') } mult_div
 // mult_div = { square ('*'|'/') } square
-// square = { minus '^' } minus
-// minus = ( '-' minus ) | factorial
+// minus = ( '-' minus ) | square
+// square = { factorial '^' } minus  // dangerous, but user-friendly
 // factorial = call ['!']
 // call = primary | idx '(' call {call} ')'
 // primary = idx | number | ( '(' expr ')' )
@@ -40,7 +40,7 @@ pub(crate) struct Parser<T: Iterator<Item = Token>> {
 #[derive(Debug, Clone)]
 pub(crate) enum MagicArg {
     Idx,
-    Expr
+    Expr,
 }
 
 impl<T: Iterator<Item = Token>> Parser<T> {
@@ -145,7 +145,10 @@ impl<T: Iterator<Item = Token>> Parser<T> {
                 }
             }
         } else {
-            print_err!("can't find magic function named: {}", self.find_name(magic_name).unwrap_or("Unknown"));
+            print_err!(
+                "can't find magic function named: {}",
+                self.find_name(magic_name).unwrap_or("Unknown")
+            );
             return None;
         };
 
@@ -157,16 +160,20 @@ impl<T: Iterator<Item = Token>> Parser<T> {
         match magic_name {
             p if p == hash_it(&"plot2d") => {
                 if idxs.len() != 1 || exprs.len() != 3 {
-                    print_err!("magic function plot2d need 4 args: function name, start, end, step");
+                    print_err!(
+                        "magic function plot2d need 4 args: function name, start, end, step"
+                    );
                     return None;
                 }
 
                 let expr3 = exprs.pop().unwrap();
                 let expr2 = exprs.pop().unwrap();
                 let expr1 = exprs.pop().unwrap();
-                Some(Box::new(Stmt::Magic { kind: MagicKind::Plot2d(idxs[0], expr1, expr2, expr3) }))
+                Some(Box::new(Stmt::Magic {
+                    kind: MagicKind::Plot2d(idxs[0], expr1, expr2, expr3),
+                }))
             }
-            _ => None // impossible
+            _ => None, // impossible
         }
     }
 
@@ -295,7 +302,7 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     }
 
     fn mult_div(&mut self, start: Token) -> Option<Box<Expr>> {
-        let mut left = self.square(start)?;
+        let mut left = self.minus(start)?;
 
         while self.check(Token::Star) || self.check(Token::Slash) {
             let op = match self.next().unwrap() {
@@ -306,26 +313,6 @@ impl<T: Iterator<Item = Token>> Parser<T> {
 
             if self.is_at_end() {
                 print_err!("expect a expression after '*' or '/'");
-                return None;
-            }
-
-            let start = self.next().unwrap();
-            let right = self.square(start)?;
-            left = Box::new(Expr::Binary { left, op, right })
-        }
-
-        Some(left)
-    }
-
-    fn square(&mut self, start: Token) -> Option<Box<Expr>> {
-        let mut left = self.minus(start)?;
-
-        while self.check(Token::Square) {
-            self.eat();
-            let op = BinaryOp::Square;
-
-            if self.is_at_end() {
-                print_err!("expect a expression after '^'");
                 return None;
             }
 
@@ -351,7 +338,27 @@ impl<T: Iterator<Item = Token>> Parser<T> {
             return Some(Box::new(Expr::Unary { op, operand }));
         }
 
-        self.factorial(start)
+        self.square(start)
+    }
+
+    fn square(&mut self, start: Token) -> Option<Box<Expr>> {
+        let mut left = self.factorial(start)?;
+
+        while self.check(Token::Square) {
+            self.eat();
+            let op = BinaryOp::Square;
+
+            if self.is_at_end() {
+                print_err!("expect a expression after '^'");
+                return None;
+            }
+
+            let start = self.next().unwrap();
+            let right = self.minus(start)?;
+            left = Box::new(Expr::Binary { left, op, right })
+        }
+
+        Some(left)
     }
 
     fn factorial(&mut self, start: Token) -> Option<Box<Expr>> {
@@ -432,7 +439,12 @@ impl<T: Iterator<Item = Token>> Parser<T> {
     }
 
     fn magic_plot(&mut self) {
-        let args = vec![MagicArg::Idx, MagicArg::Expr, MagicArg::Expr, MagicArg::Expr];
+        let args = vec![
+            MagicArg::Idx,
+            MagicArg::Expr,
+            MagicArg::Expr,
+            MagicArg::Expr,
+        ];
         let hash = hash_it(&"plot2d");
         self.magic.insert(hash, args);
     }

@@ -15,7 +15,7 @@ fn main() {
             .expect("fail to read input");
 
         // exit
-        if line == "exit\n" || line == "exit" {
+        if line == "exit\n" || line == "exit" || line == "exit()" || line == "exit()\n" {
             break;
         }
 

@@ -4,27 +4,28 @@ use std::collections::HashMap;
 use drawille::Canvas;
 
 use crate::{
-    ast::{BinaryOp, Expr, Stmt, UnaryOp, Valuable, MagicKind},
+    ast::{BinaryOp, Expr, MagicKind, Stmt, UnaryOp, Valuable},
     lexer::Scanner,
+    onemore::OneMore,
     parser::Parser,
     utils::{factorial, hash_it, print_err},
-    onemore::OneMore,
 };
 
+type CalcFn = Box<dyn Fn(&[f64]) -> OneMore>;
 
 macro_rules! f64method_to_native {
     ($name:tt) => {
         NativeFun {
-            fun: Box::new(|arg:&[f64]| OneMore::One(f64::$name(arg[0]))),
+            fun: Box::new(|arg: &[f64]| OneMore::One(f64::$name(arg[0]))),
             arg_num: 1,
             return_num: 1,
-        }    
+        }
     };
 }
 
 #[allow(unused)]
 struct NativeFun {
-    fun: Box<dyn Fn(&[f64]) -> OneMore>,
+    fun: CalcFn,
     arg_num: usize,
     return_num: usize,
 }
@@ -48,11 +49,11 @@ impl Env {
             (hash_it(&"asin"), f64method_to_native!(asin)),
             (hash_it(&"atan"), f64method_to_native!(atan)),
             (hash_it(&"sqrt"), f64method_to_native!(sqrt)),
-            (hash_it(&"abs"),   f64method_to_native!(abs)),
-            (hash_it(&"sinh"),  f64method_to_native!(sinh)),
-            (hash_it(&"cosh"),  f64method_to_native!(cosh)),
+            (hash_it(&"abs"), f64method_to_native!(abs)),
+            (hash_it(&"sinh"), f64method_to_native!(sinh)),
+            (hash_it(&"cosh"), f64method_to_native!(cosh)),
             (hash_it(&"floor"), f64method_to_native!(floor)),
-            (hash_it(&"to_rad"),f64method_to_native!(to_radians)),
+            (hash_it(&"to_rad"), f64method_to_native!(to_radians)),
         ]);
         let global = HashMap::from([
             (hash_it(&"PI"), std::f64::consts::PI),
@@ -90,33 +91,38 @@ impl Env {
                 self.global.insert(idx, value);
                 None
             }
-            Stmt::Magic { kind } => {
-                match kind {
-                    MagicKind::Plot2d(idx, e1, e2, e3) => {
-                        if let Some((_, body)) = self.functions.get_key_value(&idx) {
-                            let mut c = Canvas::new();
-                            let mut x = e1.value(self, None)?.one()?;
-                            let end = e2.value(self, None)?.one()?;
-                            let step = e3.value(self, None)?.one()?;
-                            while x < end {
-                                let y = body.value(self, Some(&[x]))?.one()?;
-                                c.set(x, y);
-                                x += step;
-                            }
-                            println!("{}", c.frame());
-                            return None;
-                        } else {
-                            print_err!("can't find function {}", self.find_name(idx).unwrap_or("Unknown"));
-                            return None;
+            Stmt::Magic { kind } => match kind {
+                MagicKind::Plot2d(idx, e1, e2, e3) => {
+                    if let Some((_, body)) = self.functions.get_key_value(&idx) {
+                        let mut c = Canvas::new();
+                        let mut x = e1.value(self, None)?.one()?;
+                        let end = e2.value(self, None)?.one()?;
+                        let step = e3.value(self, None)?.one()?;
+                        while x < end {
+                            let y = body.value(self, Some(&[x]))?.one()?;
+                            c.set(x, y);
+                            x += step;
                         }
+                        println!("{}", c.frame());
+                        None
+                    } else {
+                        print_err!(
+                            "can't find function {}",
+                            self.find_name(idx).unwrap_or("Unknown")
+                        );
+                        None
                     }
                 }
-            }
+            },
         }
     }
 
     fn push_namespace(&mut self, namespace: HashMap<u64, String>) {
-        self.name_space = Some(namespace);
+        if let Some(m) = self.name_space.as_mut() {
+            m.extend(namespace);
+        } else {
+            self.name_space = Some(namespace);
+        }
     }
 
     fn find_name(&self, idx: u64) -> Option<&str> {
@@ -185,7 +191,11 @@ impl Value for Expr {
                     body.value(env, Some(&this_locals))
                 } else if let Some((_, f)) = env.builtin.get_key_value(idx) {
                     if this_locals.len() != f.arg_num {
-                        print_err!("expect {} arguments, but get {}", f.arg_num, this_locals.len());
+                        print_err!(
+                            "expect {} arguments, but get {}",
+                            f.arg_num,
+                            this_locals.len()
+                        );
                         return None;
                     }
                     let v = (f.fun)(&this_locals);

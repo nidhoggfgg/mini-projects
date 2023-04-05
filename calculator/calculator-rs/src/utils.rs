@@ -10,7 +10,7 @@ pub(crate) fn is_identifier_continue(c: char) -> bool {
 }
 
 pub(crate) fn is_number(c: char) -> bool {
-    ('0'..='9').contains(&c)
+    c.is_ascii_digit()
 }
 
 macro_rules! print_err {

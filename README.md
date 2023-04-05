@@ -21,21 +21,25 @@ a sample:
 
 ## [calculator](./calculator/README.md) (Rust)
 
-a simple but powerful calculator  
-pls see this example
+a calculator which support variable, functions and plot. only 1000 line of code!
 ```
->>> 12.34 * 45.67 + 6! / 2^4
-608.5678
+>>> 12.34 * 45.67 + 6! / 2^4 - 1.2+3*(1-2)
+604.3678
 >>> fun f(a b) = a^x + sin(b) * floor(a*b+5)
 >>> x = 4
 >>> f(ln(PI) E)
 5.003415549553682
->>>
+>>> fun g(x) = -sin(to_rad(10*x)) * 10 + 15
+>>> %plot2d(g, 0, 72, 0.1)
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢀⡴⠒⠲⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠒⠲⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⣰⠋⠀⠀⠀⠈⢳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⠋⠀⠀⠀⠈⢳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡴⠁⠀⠀⠀⠀⠀⠀⠱⡄⠀⠀⠀⠀⠀⠀⠀⠀⡴⠁⠀⠀⠀⠀⠀⠀⠹⡄⠀⠀⠀⠀⠀⠀⠀⠀⡀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣄⠀⠀⠀⠀⠀⢀⡼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠙⣄⠀⠀⠀⠀⠀⢀⡼⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢦⡀⠀⠀⣠⠞⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢦⡀⠀⠀⣠⠞⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒⠚⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠒⠚⠁⠀
 ```
-and it support a magic function plot:
-![magic-plot.png](./images/calc-magic-plot2d.png)
-
-**note: it is in dev, some thing will change**
+![plot2d](./calculator/img/plot2d.png)
 
 ## [termgraph](./termgraph/README.md) (Python, Rust)
 
