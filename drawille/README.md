@@ -15,12 +15,12 @@ in addition to `lib.rs` there are the following binary crate:
 
 1. basic
 
-![basic.png](../images/drawille/basic.png)
+![basic.png](./img/basic.png)
 
 2. turtle
 
-![turtle.png](../images/drawille/turtle.png)
+![turtle.png](./img/turtle.png)
 
 3. cube
 
-![cube.gif](../images/drawille/cube.gif)
+![cube.gif](./img/cube.gif)

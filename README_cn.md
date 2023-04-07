@@ -7,8 +7,9 @@
 
 一个 [drawille](https://github.com/asciimoo/drawille) 的复刻版，有些许增强。
 
-![cube.gif](./images/drawille/cube.gif)
-![basic.png](./images/drawille/basic.png)
+![basic.png](./drawille/img/basic.png)
+![turtle.png](./drawille/img/turtle.png)
+![cube.gif](./drawille/img/cube.gif)
 
 ## [甜甜圈](./donut/README_cn.md) (Rust)
 

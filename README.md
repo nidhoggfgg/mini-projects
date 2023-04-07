@@ -10,8 +10,9 @@ every project is small(less than 1000 loc) and easy to understand.
 
 a copy version of [drawille](https://github.com/asciimoo/drawille).
 
-![cube.gif](./images/drawille/cube.gif)
-![basic.png](./images/drawille/basic.png)
+![basic.png](./drawille/img/basic.png)
+![turtle.png](./drawille/img/turtle.png)
+![cube.gif](./drawille/img/cube.gif)
 
 ## [neodonut](./donut/README.md) (Rust)
 

@@ -137,7 +137,7 @@ impl Canvas {
 
         if self.get_height() <= row {
             let pad_num = row - self.get_height() + 1;
-            let mut pad = vec![vec![0; col+1]; pad_num];
+            let mut pad = vec![vec![0; col + 1]; pad_num];
             self.pixels.append(&mut pad);
         }
     }

@@ -43,11 +43,8 @@ fn gen_cube(side_len: f64) -> ([Point3D; 8], [(usize, usize); 12]) {
 fn gen_rotate(k: i32) -> (f64, f64, f64) {
     match k {
         k if k % 2 == 0 => (1.0, 2.0, 3.0),
-        k if k % 3 == 0 => (1.0, 3.0, 2.0),
-        k if k % 5 == 0 => (2.0, 1.0, 3.0),
-        k if k % 7 == 0 => (2.0, 3.0, 1.0),
-        k if k % 11 == 0 => (3.0, 2.0, 1.0),
-        _ => (3.0, 1.0, 2.0)
+        k if k % 5 == 0 => (2.0, 3.0, 4.0),
+        _ => (3.0, 4.0, 5.0),
     }
 }
 
@@ -56,8 +53,8 @@ fn main() {
     let (mut vertices, sides) = gen_cube(side_len);
     let mut k = 0;
     let mut c = Canvas::new();
-    // hide the cursor
-    println!("\x1B[?25l");
+    // hide the cursor and clear screen
+    println!("\x1B[?25l\x1B[2J");
     loop {
         let (rx, ry, rz) = gen_rotate(k);
         for v in &mut vertices {
